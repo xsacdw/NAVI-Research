@@ -20,7 +20,7 @@ const STORAGE_KEY = "navi-reading-settings";
 export const DEFAULT_SETTINGS: ReadingSettings = {
   fontSize: 8,
   lineHeight: 8,
-  viewMode: "default",
+  viewMode: "dark",
 };
 
 export function loadSettings(): ReadingSettings {

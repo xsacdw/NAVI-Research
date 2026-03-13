@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -13,7 +13,6 @@ import { sessions } from "@/lib/data";
 import {
   ReadSettings,
   loadSettings,
-  saveSettings,
   applyViewMode,
   getFontSize,
   getLineHeight,
@@ -35,6 +34,31 @@ interface ReadClientProps {
   toc: TocItem[];
 }
 
+/** Split markdown into chapters by ## headings */
+function splitChapters(md: string): { title: string; body: string }[] {
+  const lines = md.split("\n");
+  const chapters: { title: string; body: string }[] = [];
+  let currentTitle = "";
+  let currentLines: string[] = [];
+
+  for (const line of lines) {
+    const h2Match = line.match(/^##\s+(.+)$/);
+    if (h2Match) {
+      if (currentLines.length > 0 || currentTitle) {
+        chapters.push({ title: currentTitle, body: currentLines.join("\n") });
+      }
+      currentTitle = h2Match[1];
+      currentLines = [];
+    } else {
+      currentLines.push(line);
+    }
+  }
+  if (currentLines.length > 0 || currentTitle) {
+    chapters.push({ title: currentTitle, body: currentLines.join("\n") });
+  }
+  return chapters;
+}
+
 export function ReadClient({ id, content, toc }: ReadClientProps) {
   const { locale, t } = useLocale();
   const session = sessions.find((s) => s.id === id);
@@ -42,53 +66,40 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
 
   const loc = session[locale];
 
-  // --- Reading progress ---
-  const [progress, setProgress] = useState(0);
-  const articleRef = useRef<HTMLDivElement>(null);
+  // --- Chapters ---
+  const chapters = useMemo(() => {
+    if (!content) return [];
+    return splitChapters(content);
+  }, [content]);
 
+  const [chapterIdx, setChapterIdx] = useState(0);
+  const currentChapter = chapters[chapterIdx] || null;
+
+  const goNext = () => {
+    if (chapterIdx < chapters.length - 1) {
+      setChapterIdx(chapterIdx + 1);
+      window.scrollTo({ top: 0 });
+    }
+  };
+
+  const goPrev = () => {
+    if (chapterIdx > 0) {
+      setChapterIdx(chapterIdx - 1);
+      window.scrollTo({ top: 0 });
+    }
+  };
+
+  // Keyboard navigation
   useEffect(() => {
-    const handleScroll = () => {
-      const el = articleRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const total = el.scrollHeight - window.innerHeight;
-      const scrolled = -rect.top;
-      setProgress(Math.min(100, Math.max(0, (scrolled / total) * 100)));
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
     };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  });
 
-  // --- Active TOC tracking ---
-  const [activeId, setActiveId] = useState("");
-
-  useEffect(() => {
-    if (toc.length === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-          }
-        }
-      },
-      { rootMargin: "-80px 0px -60% 0px", threshold: 0.1 }
-    );
-
-    const timer = setTimeout(() => {
-      toc.forEach((item) => {
-        const el = document.getElementById(item.id);
-        if (el) observer.observe(el);
-      });
-    }, 300);
-
-    return () => {
-      clearTimeout(timer);
-      observer.disconnect();
-    };
-  }, [toc]);
-
-  // --- TOC sidebar toggle ---
+  // --- TOC sidebar ---
   const [tocOpen, setTocOpen] = useState(false);
 
   // --- Reading settings ---
@@ -101,56 +112,77 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
     applyViewMode(s.viewMode);
   }, []);
 
-  const scrollToSection = useCallback((sectionId: string) => {
-    const el = document.getElementById(sectionId);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-      setTocOpen(false);
-    }
-  }, []);
+  // Progress
+  const progress = chapters.length > 0 ? Math.round(((chapterIdx + 1) / chapters.length) * 100) : 0;
 
-  // --- Section navigation ---
-  const h2Sections = toc.filter((item) => item.level === 2);
-  const currentSectionIdx = h2Sections.findIndex((s) => s.id === activeId);
-  const currentSection =
-    currentSectionIdx >= 0
-      ? h2Sections[currentSectionIdx]
-      : h2Sections[0] || null;
-
-  const goPrev = () => {
-    if (currentSectionIdx > 0) {
-      scrollToSection(h2Sections[currentSectionIdx - 1].id);
-    }
-  };
-
-  const goNext = () => {
-    if (currentSectionIdx < h2Sections.length - 1) {
-      scrollToSection(h2Sections[currentSectionIdx + 1].id);
-    }
-  };
-
-  // --- numbered TOC items grouping ---
-  const groupedToc = (() => {
-    const groups: { parent: TocItem; children: TocItem[] }[] = [];
+  // --- Grouped TOC ---
+  const groupedToc = useMemo(() => {
+    const groups: { parent: TocItem; children: TocItem[]; chapterIdx: number }[] = [];
+    let h2Index = -1;
     toc.forEach((item) => {
       if (item.level === 2) {
-        groups.push({ parent: item, children: [] });
+        h2Index++;
+        groups.push({ parent: item, children: [], chapterIdx: h2Index + 1 });
       } else if (groups.length > 0) {
         groups[groups.length - 1].children.push(item);
       }
     });
     return groups;
-  })();
+  }, [toc]);
+
+  // Markdown components
+  const mdComponents = useMemo(() => ({
+    h1: ({ children, ...props }: any) => {
+      const text = String(children);
+      const hid = text.toLowerCase().replace(/[^a-z0-9가-힣\s-]/g, "").replace(/\s+/g, "-").slice(0, 60);
+      return <h1 id={hid} className="mt-10 mb-4 text-2xl font-bold tracking-tight scroll-mt-20" {...props}>{children}</h1>;
+    },
+    h2: ({ children, ...props }: any) => {
+      const text = String(children);
+      const hid = text.toLowerCase().replace(/[^a-z0-9가-힣\s-]/g, "").replace(/\s+/g, "-").slice(0, 60);
+      return <h2 id={hid} className="mt-8 mb-4 pb-2 border-b text-xl font-semibold tracking-tight scroll-mt-20" {...props}>{children}</h2>;
+    },
+    h3: ({ children, ...props }: any) => {
+      const text = String(children);
+      const hid = text.toLowerCase().replace(/[^a-z0-9가-힣\s-]/g, "").replace(/\s+/g, "-").slice(0, 60);
+      return <h3 id={hid} className="mt-6 mb-3 text-lg font-semibold scroll-mt-20" {...props}>{children}</h3>;
+    },
+    h4: ({ children, ...props }: any) => {
+      const text = String(children);
+      const hid = text.toLowerCase().replace(/[^a-z0-9가-힣\s-]/g, "").replace(/\s+/g, "-").slice(0, 60);
+      return <h4 id={hid} className="mt-4 mb-2 text-base font-semibold scroll-mt-20" {...props}>{children}</h4>;
+    },
+    p: ({ children }: any) => <p className="mb-4 leading-[1.85] text-inherit">{children}</p>,
+    blockquote: ({ children }: any) => <blockquote className="my-6 rounded-r-lg border-l-4 border-indigo-400/50 bg-indigo-500/5 px-5 py-4 text-sm italic opacity-80">{children}</blockquote>,
+    strong: ({ children }: any) => <strong className="font-semibold">{children}</strong>,
+    ol: ({ children }: any) => <ol className="my-4 list-decimal space-y-2 pl-6">{children}</ol>,
+    ul: ({ children }: any) => <ul className="my-4 list-disc space-y-2 pl-6">{children}</ul>,
+    li: ({ children }: any) => <li className="leading-relaxed">{children}</li>,
+    table: ({ children }: any) => <div className="my-6 overflow-x-auto rounded-lg border"><table className="w-full text-sm">{children}</table></div>,
+    thead: ({ children }: any) => <thead className="bg-muted/50">{children}</thead>,
+    th: ({ children }: any) => <th className="px-4 py-2.5 text-left font-semibold">{children}</th>,
+    td: ({ children }: any) => <td className="px-4 py-2.5 border-t">{children}</td>,
+    hr: () => <hr className="my-10 border-current opacity-10" />,
+    img: ({ src, alt }: any) => (
+      <figure className="my-8">
+        <div className="overflow-hidden rounded-lg border"><img src={src} alt={alt || ""} className="w-full" /></div>
+        {alt && <figcaption className="mt-2 text-center text-sm italic opacity-60">{alt}</figcaption>}
+      </figure>
+    ),
+    a: ({ href, children }: any) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline underline-offset-2 hover:text-indigo-300">{children}</a>,
+    code: ({ children, className }: any) => {
+      const isBlock = className?.includes("language-");
+      if (isBlock) return <code className="block my-4 p-4 rounded-lg bg-black/10 dark:bg-white/5 text-sm overflow-x-auto">{children}</code>;
+      return <code className="rounded bg-black/10 dark:bg-white/10 px-1.5 py-0.5 text-sm font-mono">{children}</code>;
+    },
+  }), []);
 
   return (
     <div className={`min-h-screen transition-colors ${getViewModeClasses(readSettings.viewMode)}`}>
       {/* Top bar */}
       <header className={`sticky top-0 z-50 border-b backdrop-blur-md ${getHeaderClasses(readSettings.viewMode)}`}>
         <div className="mx-auto max-w-6xl flex items-center justify-between px-4 h-14">
-          <Link
-            href="/"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
+          <Link href="/" className="opacity-60 hover:opacity-100 transition-opacity">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
@@ -158,30 +190,26 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
 
           <div className="text-center flex-1 min-w-0 px-4">
             <h1 className="text-sm font-semibold truncate">
-              {currentSection?.text || loc.title}
+              {currentChapter?.title || loc.title}
             </h1>
             {loc.subtitle && (
-              <p className="text-xs text-muted-foreground truncate">
-                {loc.subtitle}
-              </p>
+              <p className="text-xs opacity-50 truncate">{loc.subtitle}</p>
             )}
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Settings button */}
+            {/* Settings button — gear icon */}
             <div className="relative">
               <button
                 onClick={() => { setSettingsOpen(!settingsOpen); setTocOpen(false); }}
                 className={`p-2 rounded-lg transition-colors ${
-                  settingsOpen
-                    ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  settingsOpen ? "bg-indigo-500/10 text-indigo-400" : "opacity-60 hover:opacity-100"
                 }`}
                 aria-label="설정"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
                   <circle cx="12" cy="12" r="3"/>
-                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
                 </svg>
               </button>
               <ReadSettings
@@ -196,9 +224,7 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
             <button
               onClick={() => { setTocOpen(!tocOpen); setSettingsOpen(false); }}
               className={`p-2 rounded-lg transition-colors ${
-                tocOpen
-                  ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                tocOpen ? "bg-indigo-500/10 text-indigo-400" : "opacity-60 hover:opacity-100"
               }`}
               aria-label="목차"
             >
@@ -210,151 +236,81 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
         </div>
       </header>
 
-      {/* Reading progress bar */}
-      <div className="fixed top-14 left-0 right-0 z-40 h-0.5 bg-gray-200 dark:bg-muted">
-        <div
-          className="h-full bg-indigo-500 transition-all duration-150"
-          style={{ width: `${progress}%` }}
-        />
+      {/* Progress bar */}
+      <div className="fixed top-14 left-0 right-0 z-40 h-0.5 bg-current opacity-10">
+        <div className="h-full bg-indigo-500 transition-all duration-300" style={{ width: `${progress}%` }} />
       </div>
 
       <div className="mx-auto max-w-6xl px-4 py-10">
         <div className="flex gap-8">
-          {/* --- Main content --- */}
+          {/* Main content */}
           <article
-            ref={articleRef}
             className="min-w-0 flex-1 max-w-3xl mx-auto"
             style={{
               fontSize: getFontSize(readSettings.fontSize),
               lineHeight: getLineHeight(readSettings.lineHeight),
             }}
           >
-            {/* Meta header */}
-            <header className="mb-8 text-center">
-              <h1 className="mb-2 text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-foreground">
-                {loc.title}
-              </h1>
-              {loc.subtitle && (
-                <p className="mb-4 text-base text-gray-500 dark:text-muted-foreground">
-                  {loc.subtitle}
-                </p>
-              )}
-              <div className="flex flex-wrap justify-center items-center gap-3 text-sm text-gray-500 dark:text-muted-foreground">
-                <span>📅 {session.date}</span>
-                <Separator orientation="vertical" className="h-4" />
-                <span>{session.words.toLocaleString()} {t.words}</span>
-                <Separator orientation="vertical" className="h-4" />
-                <span>📚 {session.citations} {t.citations}</span>
-                <Separator orientation="vertical" className="h-4" />
-                <Badge
-                  className={
-                    session.ptcs >= 80
-                      ? "bg-green-500/15 text-green-600 dark:text-green-400"
-                      : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                  }
-                >
-                  {t.ptcs} {session.ptcs}%
-                </Badge>
-                <Badge variant="secondary">{translateType(session.type, t)}</Badge>
-              </div>
-            </header>
+            {/* Chapter 0 = intro (title + abstract) */}
+            {chapterIdx === 0 && (
+              <>
+                <header className="mb-8 text-center">
+                  <h1 className="mb-2 text-2xl font-bold leading-tight tracking-tight">
+                    {loc.title}
+                  </h1>
+                  {loc.subtitle && (
+                    <p className="mb-4 text-base opacity-50">{loc.subtitle}</p>
+                  )}
+                  <div className="flex flex-wrap justify-center items-center gap-3 text-sm opacity-50">
+                    <span>📅 {session.date}</span>
+                    <Separator orientation="vertical" className="h-4" />
+                    <span>{session.words.toLocaleString()} {t.words}</span>
+                    <Separator orientation="vertical" className="h-4" />
+                    <span>📚 {session.citations} {t.citations}</span>
+                    <Separator orientation="vertical" className="h-4" />
+                    <Badge className={session.ptcs >= 80 ? "bg-green-500/15 text-green-400" : "bg-amber-500/15 text-amber-400"}>
+                      {t.ptcs} {session.ptcs}%
+                    </Badge>
+                    <Badge variant="secondary">{translateType(session.type, t)}</Badge>
+                  </div>
+                </header>
+                <blockquote className="mb-10 rounded-lg border-l-4 border-indigo-400 bg-indigo-500/5 px-5 py-4 text-sm italic opacity-70">
+                  {loc.abstract}
+                </blockquote>
+              </>
+            )}
 
-            {/* Abstract block */}
-            <blockquote className="mb-10 rounded-lg border-l-4 border-indigo-400 bg-indigo-50/50 dark:bg-indigo-500/5 px-5 py-4 text-sm text-gray-600 dark:text-muted-foreground italic">
-              {loc.abstract}
-            </blockquote>
-
-            {/* Markdown content */}
-            {content ? (
+            {/* Chapter content */}
+            {currentChapter && (
               <div className="prose-academic">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    h1: ({ children, ...props }) => {
-                      const text = String(children);
-                      const headingId = text.toLowerCase().replace(/[^a-z0-9가-힣\s-]/g, "").replace(/\s+/g, "-").slice(0, 60);
-                      return <h1 id={headingId} className="mt-12 mb-4 text-2xl font-bold tracking-tight text-gray-900 dark:text-foreground scroll-mt-20" {...props}>{children}</h1>;
-                    },
-                    h2: ({ children, ...props }) => {
-                      const text = String(children);
-                      const headingId = text.toLowerCase().replace(/[^a-z0-9가-힣\s-]/g, "").replace(/\s+/g, "-").slice(0, 60);
-                      return <h2 id={headingId} className="mt-10 mb-4 pb-2 border-b border-gray-200 dark:border-border text-xl font-semibold tracking-tight text-gray-900 dark:text-foreground scroll-mt-20" {...props}>{children}</h2>;
-                    },
-                    h3: ({ children, ...props }) => {
-                      const text = String(children);
-                      const headingId = text.toLowerCase().replace(/[^a-z0-9가-힣\s-]/g, "").replace(/\s+/g, "-").slice(0, 60);
-                      return <h3 id={headingId} className="mt-8 mb-3 text-lg font-semibold text-gray-800 dark:text-foreground scroll-mt-20" {...props}>{children}</h3>;
-                    },
-                    h4: ({ children, ...props }) => {
-                      const text = String(children);
-                      const headingId = text.toLowerCase().replace(/[^a-z0-9가-힣\s-]/g, "").replace(/\s+/g, "-").slice(0, 60);
-                      return <h4 id={headingId} className="mt-6 mb-2 text-base font-semibold text-gray-800 dark:text-foreground scroll-mt-20" {...props}>{children}</h4>;
-                    },
-                    p: ({ children }) => (
-                      <p className="mb-4 text-[15px] leading-[1.85] text-gray-700 dark:text-muted-foreground">{children}</p>
-                    ),
-                    blockquote: ({ children }) => (
-                      <blockquote className="my-6 rounded-r-lg border-l-4 border-indigo-400/50 bg-indigo-50/50 dark:bg-indigo-500/5 px-5 py-4 text-sm italic text-gray-600 dark:text-muted-foreground">{children}</blockquote>
-                    ),
-                    strong: ({ children }) => (
-                      <strong className="font-semibold text-gray-900 dark:text-foreground">{children}</strong>
-                    ),
-                    ol: ({ children }) => (
-                      <ol className="my-4 list-decimal space-y-2 pl-6 text-[15px] text-gray-700 dark:text-muted-foreground">{children}</ol>
-                    ),
-                    ul: ({ children }) => (
-                      <ul className="my-4 list-disc space-y-2 pl-6 text-[15px] text-gray-700 dark:text-muted-foreground">{children}</ul>
-                    ),
-                    li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                    table: ({ children }) => (
-                      <div className="my-6 overflow-x-auto rounded-lg border"><table className="w-full text-sm">{children}</table></div>
-                    ),
-                    thead: ({ children }) => <thead className="bg-gray-50 dark:bg-muted/50">{children}</thead>,
-                    th: ({ children }) => <th className="px-4 py-2.5 text-left font-semibold text-gray-900 dark:text-foreground">{children}</th>,
-                    td: ({ children }) => <td className="px-4 py-2.5 text-gray-700 dark:text-muted-foreground border-t">{children}</td>,
-                    hr: () => <hr className="my-10 border-gray-200 dark:border-border" />,
-                    img: ({ src, alt }) => (
-                      <figure className="my-8">
-                        <div className="overflow-hidden rounded-lg border bg-white dark:bg-card">
-                          <img src={src} alt={alt || ""} className="w-full" />
-                        </div>
-                        {alt && <figcaption className="mt-2 text-center text-sm italic text-gray-500 dark:text-muted-foreground">{alt}</figcaption>}
-                      </figure>
-                    ),
-                    a: ({ href, children }) => (
-                      <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 underline underline-offset-2 hover:text-indigo-500">{children}</a>
-                    ),
-                    code: ({ children, className }) => {
-                      const isBlock = className?.includes("language-");
-                      if (isBlock) {
-                        return <code className="block my-4 p-4 rounded-lg bg-gray-100 dark:bg-muted text-sm overflow-x-auto">{children}</code>;
-                      }
-                      return <code className="rounded bg-gray-100 dark:bg-muted px-1.5 py-0.5 text-sm font-mono text-gray-800 dark:text-foreground">{children}</code>;
-                    },
-                  }}
-                >
-                  {content}
+                {currentChapter.title && chapterIdx > 0 && (
+                  <h2 className="mt-2 mb-6 pb-2 border-b text-xl font-semibold tracking-tight">
+                    {currentChapter.title}
+                  </h2>
+                )}
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                  {currentChapter.body}
                 </ReactMarkdown>
               </div>
-            ) : (
-              <p className="text-gray-500 dark:text-muted-foreground italic">
+            )}
+
+            {!content && (
+              <p className="opacity-50 italic">
                 {locale === "ko" ? "논문 원본 파일을 찾을 수 없습니다." : "Thesis file not found."}
               </p>
             )}
           </article>
 
-          {/* --- Right TOC sidebar (desktop) --- */}
+          {/* Right TOC sidebar */}
           {toc.length > 0 && tocOpen && (
             <aside className="hidden lg:block w-72 shrink-0">
               <nav className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
-                {groupedToc.map((group, gi) => (
+                {groupedToc.map((group) => (
                   <div key={group.parent.id} className="mb-4">
                     <button
-                      onClick={() => scrollToSection(group.parent.id)}
+                      onClick={() => { setChapterIdx(group.chapterIdx); setTocOpen(false); window.scrollTo({ top: 0 }); }}
                       className={`block w-full text-left text-[13px] font-semibold leading-snug py-1 transition-colors ${
-                        activeId === group.parent.id
-                          ? "text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-900 dark:text-foreground hover:text-indigo-600 dark:hover:text-indigo-400"
+                        chapterIdx === group.chapterIdx ? "text-indigo-400" : "opacity-70 hover:opacity-100"
                       }`}
                     >
                       {group.parent.text}
@@ -364,14 +320,10 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
                         {group.children.map((child, ci) => (
                           <li key={child.id}>
                             <button
-                              onClick={() => scrollToSection(child.id)}
-                              className={`block w-full text-left text-[12px] leading-snug py-0.5 pl-3 transition-colors ${
-                                activeId === child.id
-                                  ? "text-indigo-600 dark:text-indigo-400 font-medium"
-                                  : "text-gray-500 dark:text-muted-foreground hover:text-gray-800 dark:hover:text-foreground"
-                              }`}
+                              onClick={() => { setChapterIdx(group.chapterIdx); setTocOpen(false); window.scrollTo({ top: 0 }); }}
+                              className="block w-full text-left text-[12px] leading-snug py-0.5 pl-3 opacity-50 hover:opacity-80 transition-opacity"
                             >
-                              <span className="inline-block w-5 text-gray-400 dark:text-muted-foreground text-[11px]">
+                              <span className="inline-block w-5 text-[11px] opacity-50">
                                 {String(ci + 1).padStart(2, "0")}
                               </span>
                               {child.text}
@@ -389,37 +341,27 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
       </div>
 
       {/* Bottom navigation */}
-      {h2Sections.length > 1 && (
+      {chapters.length > 1 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3">
           <button
             onClick={goPrev}
-            disabled={currentSectionIdx <= 0}
+            disabled={chapterIdx <= 0}
             className="flex items-center justify-center w-12 h-10 rounded-full bg-indigo-600 text-white shadow-lg disabled:opacity-30 hover:bg-indigo-500 transition-all"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
           </button>
-          <div className="px-3 py-1.5 rounded-full bg-white dark:bg-card border shadow-lg text-xs font-medium text-gray-600 dark:text-muted-foreground min-w-[48px] text-center">
-            {Math.round(progress)}%
+          <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/10 shadow-lg text-xs font-medium min-w-[48px] text-center">
+            {progress}%
           </div>
           <button
             onClick={goNext}
-            disabled={currentSectionIdx >= h2Sections.length - 1}
+            disabled={chapterIdx >= chapters.length - 1}
             className="flex items-center justify-center w-12 h-10 rounded-full bg-indigo-600 text-white shadow-lg disabled:opacity-30 hover:bg-indigo-500 transition-all"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </button>
-
-          {/* Scroll to top */}
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="flex items-center justify-center w-8 h-8 rounded-full border bg-white dark:bg-card shadow text-gray-400 hover:text-gray-700 dark:hover:text-foreground transition-colors ml-1"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 19V5M5 12l7-7 7 7"/>
             </svg>
           </button>
         </div>
@@ -427,22 +369,14 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
 
       {/* Mobile TOC overlay */}
       {tocOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 z-30 lg:hidden"
-          onClick={() => setTocOpen(false)}
-        >
-          <div
-            className="absolute right-0 top-14 bottom-0 w-72 bg-white dark:bg-background border-l overflow-y-auto p-4 animate-in slide-in-from-right"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {groupedToc.map((group, gi) => (
+        <div className="fixed inset-0 bg-black/30 z-30 lg:hidden" onClick={() => setTocOpen(false)}>
+          <div className="absolute right-0 top-14 bottom-0 w-72 border-l overflow-y-auto p-4 animate-in slide-in-from-right bg-inherit" onClick={(e) => e.stopPropagation()}>
+            {groupedToc.map((group) => (
               <div key={group.parent.id} className="mb-4">
                 <button
-                  onClick={() => scrollToSection(group.parent.id)}
+                  onClick={() => { setChapterIdx(group.chapterIdx); setTocOpen(false); window.scrollTo({ top: 0 }); }}
                   className={`block w-full text-left text-[13px] font-semibold leading-snug py-1 transition-colors ${
-                    activeId === group.parent.id
-                      ? "text-indigo-600 dark:text-indigo-400"
-                      : "text-gray-900 dark:text-foreground"
+                    chapterIdx === group.chapterIdx ? "text-indigo-400" : ""
                   }`}
                 >
                   {group.parent.text}
@@ -452,14 +386,10 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
                     {group.children.map((child, ci) => (
                       <li key={child.id}>
                         <button
-                          onClick={() => scrollToSection(child.id)}
-                          className={`block w-full text-left text-[12px] leading-snug py-0.5 pl-3 transition-colors ${
-                            activeId === child.id
-                              ? "text-indigo-600 dark:text-indigo-400 font-medium"
-                              : "text-gray-500 dark:text-muted-foreground"
-                          }`}
+                          onClick={() => { setChapterIdx(group.chapterIdx); setTocOpen(false); window.scrollTo({ top: 0 }); }}
+                          className="block w-full text-left text-[12px] leading-snug py-0.5 pl-3 opacity-60"
                         >
-                          <span className="inline-block w-5 text-gray-400 text-[11px]">
+                          <span className="inline-block w-5 text-[11px] opacity-50">
                             {String(ci + 1).padStart(2, "0")}
                           </span>
                           {child.text}
