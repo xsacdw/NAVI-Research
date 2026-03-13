@@ -1,7 +1,10 @@
-# Dependencies
-node_modules/
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
@@ -19,9 +22,8 @@ build/
 
 # Logs
 *.log
+
+# Project-specific
 superpowers/
-navi-results/
-.venv/
-__pycache__/
-*.pyc
-.pytest_cache/
+tools/
+docs/sessions/_search-cache/
