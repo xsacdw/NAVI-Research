@@ -40,6 +40,51 @@ export default function Home() {
   // Folder menu
   const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
 
+  // Multi-select
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showBulkMove, setShowBulkMove] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllInFolder = (folderId: string) => {
+    const ids = getSessionsInFolder(folderId).map((s) => s.id);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const allSelected = ids.every((id) => next.has(id));
+      if (allSelected) {
+        ids.forEach((id) => next.delete(id));
+      } else {
+        ids.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const bulkMove = (folderId: string) => {
+    selected.forEach((id) => moveSession(id, folderId));
+    setSelected(new Set());
+    setShowBulkMove(false);
+    refreshState();
+  };
+
+  const bulkDelete = () => {
+    const updated = new Set(hiddenSessions);
+    selected.forEach((id) => {
+      updated.add(id);
+      removeSession(id);
+    });
+    localStorage.setItem("navi-hidden-sessions", JSON.stringify([...updated]));
+    setSelected(new Set());
+    refreshState();
+  };
+
   const refreshState = useCallback(() => {
     setFolders(getFolders());
     const mapping: Record<string, string> = {};
@@ -136,6 +181,22 @@ export default function Home() {
             <div key={folder.id} className="mb-4">
               {/* Folder Header */}
               <div className="flex items-center gap-2 mb-2">
+                {/* Select all checkbox */}
+                {folderSessions.length > 0 && (
+                  <button
+                    onClick={() => selectAllInFolder(folder.id)}
+                    className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] transition-colors ${
+                      folderSessions.every((s) => selected.has(s.id))
+                        ? "bg-indigo-600 border-indigo-600 text-white"
+                        : folderSessions.some((s) => selected.has(s.id))
+                          ? "bg-indigo-600/30 border-indigo-500 text-white"
+                          : "border-muted-foreground/30 hover:border-indigo-500"
+                    }`}
+                  >
+                    {folderSessions.every((s) => selected.has(s.id)) ? "✓" : folderSessions.some((s) => selected.has(s.id)) ? "–" : ""}
+                  </button>
+                )}
+
                 <button
                   onClick={() => toggleCollapse(folder.id)}
                   className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -208,8 +269,20 @@ export default function Home() {
                   )}
                   {folderSessions.map((s) => {
                     const loc = s[locale];
+                    const isSelected = selected.has(s.id);
                     return (
-                      <div key={s.id} className="flex items-start gap-2">
+                      <div key={s.id} className={`flex items-start gap-2 rounded-lg transition-colors ${isSelected ? "bg-indigo-500/5" : ""}`}>
+                        {/* Checkbox */}
+                        <button
+                          onClick={() => toggleSelect(s.id)}
+                          className={`mt-5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-[10px] transition-colors ${
+                            isSelected
+                              ? "bg-indigo-600 border-indigo-600 text-white"
+                              : "border-muted-foreground/30 hover:border-indigo-500"
+                          }`}
+                        >
+                          {isSelected ? "✓" : ""}
+                        </button>
                         <Link href={`/read/${s.id}`} className="flex-1 min-w-0">
                           <Card className="group cursor-pointer transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5">
                             <CardHeader className="pb-3">
@@ -287,6 +360,50 @@ export default function Home() {
           );
         })}
       </main>
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-card border rounded-full px-5 py-2.5 shadow-2xl animate-in slide-in-from-bottom-4">
+          <span className="text-sm font-medium">
+            {selected.size}개 선택
+          </span>
+          <div className="w-px h-5 bg-border" />
+          <div className="relative">
+            <button
+              onClick={() => setShowBulkMove(!showBulkMove)}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+            >
+              📂 이동
+            </button>
+            {showBulkMove && (
+              <div className="absolute bottom-10 left-0 w-40 rounded-lg border bg-popover p-1 shadow-lg animate-in fade-in-0 zoom-in-95">
+                {folders.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => bulkMove(f.id)}
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  >
+                    📁 {f.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={bulkDelete}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            🗑️ 삭제
+          </button>
+          <div className="w-px h-5 bg-border" />
+          <button
+            onClick={() => setSelected(new Set())}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            취소
+          </button>
+        </div>
+      )}
 
       <FolderDialog
         open={showCreateFolder}
