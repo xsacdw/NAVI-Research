@@ -9,6 +9,10 @@ export interface TranslationStrings {
   citations: string;
   figures: string;
   langLabel: string;
+  ptcs: string;
+  typeResearchPaper: string;
+  typeLiteratureReview: string;
+  typeReport: string;
 }
 
 export const translations: Record<string, TranslationStrings> = {
@@ -23,6 +27,10 @@ export const translations: Record<string, TranslationStrings> = {
     citations: "인용",
     figures: "그림",
     langLabel: "EN",
+    ptcs: "투고 가능성",
+    typeResearchPaper: "연구 논문",
+    typeLiteratureReview: "문헌 리뷰",
+    typeReport: "보고서",
   },
   en: {
     siteTitle: "NAVI Research",
@@ -35,7 +43,21 @@ export const translations: Record<string, TranslationStrings> = {
     citations: "citations",
     figures: "fig",
     langLabel: "한",
+    ptcs: "PTCS",
+    typeResearchPaper: "Research Paper",
+    typeLiteratureReview: "Literature Review",
+    typeReport: "Report",
   },
 };
 
 export type Locale = "ko" | "en";
+
+// Helper to translate paper type
+export function translateType(type: string, t: TranslationStrings): string {
+  switch (type) {
+    case "Research Paper": return t.typeResearchPaper;
+    case "Literature Review": return t.typeLiteratureReview;
+    case "Report": return t.typeReport;
+    default: return type;
+  }
+}
