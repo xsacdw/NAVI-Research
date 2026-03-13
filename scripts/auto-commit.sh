@@ -75,6 +75,19 @@ do_auto_commit() {
         fi
     done
 
+    # 내부에 .git이 있는 서브디렉토리를 자동으로 .gitignore에 추가
+    local gitignore="$PROJECT_DIR/.gitignore"
+    local updated=false
+    for dir in $(find "$PROJECT_DIR" -mindepth 2 -name ".git" -type d 2>/dev/null); do
+        local parent=$(dirname "$dir")
+        local rel=$(python3 -c "import os; print(os.path.relpath('$parent', '$PROJECT_DIR'))")
+        if ! grep -qx "${rel}/" "$gitignore" 2>/dev/null; then
+            echo "${rel}/" >> "$gitignore"
+            log "🚫 Auto-ignored embedded repo: ${rel}/"
+            updated=true
+        fi
+    done
+
     # Stage all changes
     git add -A
 
