@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 from pathlib import Path
+from typing import Any
 
 from rich.console import Console
 from rich.table import Table
@@ -13,7 +14,7 @@ from navi_research.search import SearchOrchestrator
 console = Console()
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(prog="navi-research", description="Academic paper search CLI — 5개 무료 학술 API 통합 검색")
     sub = parser.add_subparsers(dest="command")
 
@@ -40,7 +41,7 @@ def main():
         parser.print_help()
 
 
-async def _search(args):
+async def _search(args: Any) -> None:
     orch = SearchOrchestrator()
     sources = None if args.source == "all" else [args.source]
 
@@ -86,7 +87,7 @@ async def _search(args):
     console.print(f"   📚 results.bib      ({bib_path.stat().st_size:,} bytes)")
 
 
-def _export(args):
+def _export(args: Any) -> None:
     console.print("[yellow]Export command coming in next update[/yellow]")
 
 
