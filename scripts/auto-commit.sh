@@ -11,6 +11,7 @@
 #
 # 설정:
 INTERVAL=30          # 변경 감지 간격 (초)
+COOLDOWN=60          # 변경 후 대기 시간 (초) — 이 시간 동안 추가 변경이 없으면 커밋
 BRANCH="main"        # push할 브랜치
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PID_FILE="$PROJECT_DIR/.git/auto-commit.pid"
@@ -45,14 +46,34 @@ generate_commit_message() {
     echo "auto: ${summary} — ${files}"
 }
 
-# 자동 커밋 & push 실행
+# 변경사항이 있는지 확인
+has_changes() {
+    cd "$PROJECT_DIR" || return 1
+    ! (git diff --quiet && git diff --cached --quiet && [[ -z $(git ls-files --others --exclude-standard) ]])
+}
+
+# 자동 커밋 & push 실행 (debounce 포함)
 do_auto_commit() {
     cd "$PROJECT_DIR" || exit 1
 
     # 변경사항 확인
-    if git diff --quiet && git diff --cached --quiet && [[ -z $(git ls-files --others --exclude-standard) ]]; then
+    if ! has_changes; then
         return 0  # 변경 없음
     fi
+
+    # 쿨다운: 추가 변경이 멈출 때까지 대기
+    log "⏳ Changes detected, waiting ${COOLDOWN}s for more changes..."
+    local waited=0
+    while [[ $waited -lt $COOLDOWN ]]; do
+        sleep 10
+        waited=$((waited + 10))
+        # 중간에 새 변경이 있으면 타이머 리셋
+        if has_changes && [[ $(git diff --stat 2>/dev/null | wc -l) -gt 0 || $(git ls-files --others --exclude-standard | wc -l) -gt 0 ]]; then
+            local new_count=$(git status --short | wc -l | tr -d ' ')
+            log "   ...still changing (${new_count} files), resetting cooldown"
+            waited=0
+        fi
+    done
 
     # Stage all changes
     git add -A
