@@ -71,7 +71,7 @@ export default async function ReadPage({ params }: PageProps) {
           {session.abstract}
         </blockquote>
 
-        {/* Sections */}
+        {/* Sections + Figures */}
         <div className="prose-custom space-y-8">
           {session.sections?.map((sec, i) => (
             <section key={i}>
@@ -86,6 +86,23 @@ export default async function ReadPage({ params }: PageProps) {
                   {paragraph}
                 </p>
               ))}
+              {/* Figures after this section */}
+              {session.figures
+                ?.filter((f) => f.afterSection === i)
+                .map((fig, fi) => (
+                  <figure key={fi} className="my-8">
+                    <div className="overflow-hidden rounded-lg border bg-card">
+                      <img
+                        src={fig.src}
+                        alt={fig.caption}
+                        className="w-full"
+                      />
+                    </div>
+                    <figcaption className="mt-2 text-center text-sm italic text-muted-foreground">
+                      {fig.caption}
+                    </figcaption>
+                  </figure>
+                ))}
             </section>
           ))}
         </div>

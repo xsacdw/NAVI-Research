@@ -16,6 +16,7 @@ export interface Session {
   path?: string;
   sections?: { heading: string; content: string }[];
   references?: string[];
+  figures?: { src: string; caption: string; afterSection?: number }[];
 }
 
 // Build time: read from public/sessions.json
@@ -69,6 +70,9 @@ export const sessionDetails: Record<string, Session> = {
           "AI와 자동화는 노동 시장의 구조적 변화를 촉발하되, 적절한 재교육 시스템이 수반될 경우 순고용 효과는 긍정적일 수 있다. 6G와 초연결 기술은 의료·교육 접근성을 혁신적으로 개선할 잠재력을 보유하나, 디지털 격차 확대의 위험도 동시에 존재한다.",
       },
     ],
+    figures: [
+      { src: "/figures/future-tech-society_fig1.png", caption: "Figure 1. 기술-사회 역학 프레임워크: 기술 동인, 사회 영향, 정책 대응의 3축 구조", afterSection: 3 },
+    ],
     references: [
       "Burton, M.J., et al. (2021). The Lancet Global Health Commission on Global Eye Health. The Lancet Global Health, 9(4).",
       "Dhar, T., et al. (2024). Leveraging AI for sustainable development. Frontiers in AI.",
@@ -102,6 +106,10 @@ export const sessionDetails: Record<string, Session> = {
         content:
           "The typical architecture consists of four modules: Profiling, Memory, Planning, and Action. Each module plays a crucial role in enabling autonomous behavior.",
       },
+    ],
+    figures: [
+      { src: "/figures/llm-agents_fig1.png", caption: "Figure 1. LLM-based Agent Architecture: Profiling, Memory, Planning, and Action modules", afterSection: 1 },
+      { src: "/figures/llm-agents_fig2.png", caption: "Figure 2. Multi-Agent Collaboration Patterns", afterSection: 1 },
     ],
     references: [
       "Wang, L., et al. (2023). A Survey on LLM-based Autonomous Agents. arXiv:2308.11432.",
