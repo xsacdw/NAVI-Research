@@ -152,12 +152,12 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
       const hid = text.toLowerCase().replace(/[^a-z0-9가-힣\s-]/g, "").replace(/\s+/g, "-").slice(0, 60);
       return <h4 id={hid} className="mt-4 mb-2 text-base font-semibold scroll-mt-20" {...props}>{children}</h4>;
     },
-    p: ({ children }: any) => <p className="mb-4 leading-[1.85] text-inherit">{children}</p>,
+    p: ({ children }: any) => <p className="mb-4 text-inherit" style={{ lineHeight: "inherit" }}>{children}</p>,
     blockquote: ({ children }: any) => <blockquote className="my-6 rounded-r-lg border-l-4 border-indigo-400/50 bg-indigo-500/5 px-5 py-4 text-sm italic opacity-80">{children}</blockquote>,
     strong: ({ children }: any) => <strong className="font-semibold">{children}</strong>,
     ol: ({ children }: any) => <ol className="my-4 list-decimal space-y-2 pl-6">{children}</ol>,
     ul: ({ children }: any) => <ul className="my-4 list-disc space-y-2 pl-6">{children}</ul>,
-    li: ({ children }: any) => <li className="leading-relaxed">{children}</li>,
+    li: ({ children }: any) => <li style={{ lineHeight: "inherit" }}>{children}</li>,
     table: ({ children }: any) => <div className="my-6 overflow-x-auto rounded-lg border"><table className="w-full text-sm">{children}</table></div>,
     thead: ({ children }: any) => <thead className="bg-muted/50">{children}</thead>,
     th: ({ children }: any) => <th className="px-4 py-2.5 text-left font-semibold">{children}</th>,
