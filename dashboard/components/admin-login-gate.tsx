@@ -33,10 +33,10 @@ export function AdminLoginGate({ children }: AdminLoginGateProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const ADMIN_USER = process.env.NEXT_PUBLIC_ADMIN_USER || "admin";
+  const ADMIN_USER = process.env.NEXT_PUBLIC_ADMIN_USER || "quasar";
   const ADMIN_HASH =
     process.env.NEXT_PUBLIC_ADMIN_HASH ||
-    "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"; // "admin"
+    "d9915fe024ca8873d4777edab6e24d4ddc79094f77750b393941fac30336fa8b"; // "quasar5"
 
   useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
