@@ -1,0 +1,22 @@
+[
+  {"id": "cite_001", "authors": "Anderson, R.L.", "year": 2024, "title": "Friedrich Nietzsche", "source": "Stanford Encyclopedia of Philosophy", "url": "https://plato.stanford.edu/entries/nietzsche/", "type": "encyclopedia", "grade": "A"},
+  {"id": "cite_002", "authors": "Leiter, B.", "year": 2023, "title": "Nietzsche's Moral and Political Philosophy", "source": "Stanford Encyclopedia of Philosophy", "url": "https://plato.stanford.edu/entries/nietzsche-moral-political/", "type": "encyclopedia", "grade": "A"},
+  {"id": "cite_003", "authors": "Wicks, R.", "year": 2024, "title": "Friedrich Nietzsche: Philosophy of the Mind", "source": "Internet Encyclopedia of Philosophy (utm.edu)", "url": "https://iep.utm.edu/nietzsche/", "type": "encyclopedia", "grade": "A"},
+  {"id": "cite_004", "authors": "Gemes, K. & Richardson, J.", "year": 2013, "title": "The Oxford Handbook of Nietzsche", "source": "Oxford University Press", "url": "https://global.oup.com/academic/product/the-oxford-handbook-of-nietzsche-9780199534647", "type": "book", "grade": "A"},
+  {"id": "cite_005", "authors": "Clark, M.", "year": 2015, "title": "Nietzsche on Ethics and Politics", "source": "Oxford University Press", "url": "", "type": "book", "grade": "A"},
+  {"id": "cite_006", "authors": "Nietzsche, F.", "year": 1886, "title": "Jenseits von Gut und Böse (선악의 저편)", "source": "Original Work", "url": "", "type": "primary", "grade": "A"},
+  {"id": "cite_007", "authors": "Nietzsche, F.", "year": 1887, "title": "Zur Genealogie der Moral (도덕의 계보학)", "source": "Original Work", "url": "", "type": "primary", "grade": "A"},
+  {"id": "cite_008", "authors": "Nietzsche, F.", "year": 1883, "title": "Also sprach Zarathustra (차라투스트라는 이렇게 말했다)", "source": "Original Work", "url": "", "type": "primary", "grade": "A"},
+  {"id": "cite_009", "authors": "Nietzsche, F.", "year": 1882, "title": "Die fröhliche Wissenschaft (즐거운 학문)", "source": "Original Work", "url": "", "type": "primary", "grade": "A"},
+  {"id": "cite_010", "authors": "Nietzsche, F.", "year": 1872, "title": "Die Geburt der Tragödie (비극의 탄생)", "source": "Original Work", "url": "", "type": "primary", "grade": "A"},
+  {"id": "cite_011", "authors": "Kaufmann, W.", "year": 1974, "title": "Nietzsche: Philosopher, Psychologist, Antichrist", "source": "Princeton University Press", "url": "", "type": "book", "grade": "A"},
+  {"id": "cite_012", "authors": "Nehamas, A.", "year": 1985, "title": "Nietzsche: Life as Literature", "source": "Harvard University Press", "url": "", "type": "book", "grade": "A"},
+  {"id": "cite_013", "authors": "Richardson, J.", "year": 2020, "title": "Nietzsche's Values", "source": "Oxford University Press", "url": "", "type": "book", "grade": "A"},
+  {"id": "cite_014", "authors": "Hussain, N.J.Z.", "year": 2007, "title": "Honest Illusion: Valuing for Nietzsche's Free Spirits", "source": "Nietzsche and Morality, Oxford University Press", "url": "", "type": "article", "grade": "B"},
+  {"id": "cite_015", "authors": "Reginster, B.", "year": 2006, "title": "The Affirmation of Life: Nietzsche on Overcoming Nihilism", "source": "Harvard University Press", "url": "", "type": "book", "grade": "A"},
+  {"id": "cite_016", "authors": "Janaway, C.", "year": 2007, "title": "Beyond Selflessness: Reading Nietzsche's Genealogy", "source": "Oxford University Press", "url": "", "type": "book", "grade": "A"},
+  {"id": "cite_017", "authors": "Kolleg Friedrich Nietzsche", "year": 2024, "title": "Research Fellowships: Nietzschean Alienation to Poetic-Philosophical Meditations", "source": "Klassik Stiftung Weimar", "url": "https://www.klassik-stiftung.de/kolleg-friedrich-nietzsche/", "type": "institution", "grade": "B"},
+  {"id": "cite_018", "authors": "Nietzsche-Studien (Journal)", "year": 2024, "title": "Recent Articles on Complete Irresponsibility and Cognitive Aspects in Genealogy of Morality", "source": "De Gruyter / scispace.com", "url": "", "type": "journal", "grade": "A"},
+  {"id": "cite_019", "authors": "University of Southampton", "year": 2024, "title": "Nietzsche's Challenge to Modern Moral Philosophy Project", "source": "southampton.ac.uk", "url": "", "type": "project", "grade": "B"},
+  {"id": "cite_020", "authors": "Dries, M.", "year": 2023, "title": "Nietzsche on Consciousness and the Embodied Mind", "source": "Journal of Nietzsche Studies", "url": "", "type": "article", "grade": "B"}
+]

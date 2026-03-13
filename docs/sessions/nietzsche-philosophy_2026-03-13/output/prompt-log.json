@@ -1,0 +1,25 @@
+{
+  "session_id": "nietzsche-philosophy_2026-03-13",
+  "timestamp": "2026-03-13T21:32:00+09:00",
+  "mode": "standard",
+  "type": "Research Paper",
+  "language": "ko",
+  "sections": [
+    {"name": "Abstract", "citations_used": 2, "word_count": 450, "retries": 0, "qa_notes": "통과"},
+    {"name": "Introduction", "citations_used": 5, "word_count": 1800, "retries": 0, "qa_notes": "통과"},
+    {"name": "Related Work", "citations_used": 10, "word_count": 3200, "retries": 0, "qa_notes": "통과"},
+    {"name": "Methodology", "citations_used": 3, "word_count": 1600, "retries": 0, "qa_notes": "통과"},
+    {"name": "Results", "citations_used": 12, "word_count": 4200, "retries": 0, "qa_notes": "통과"},
+    {"name": "Discussion", "citations_used": 8, "word_count": 3000, "retries": 0, "qa_notes": "통과"},
+    {"name": "Conclusion", "citations_used": 4, "word_count": 1200, "retries": 0, "qa_notes": "통과"}
+  ],
+  "overall": {
+    "ptcs": 89,
+    "peer_review": 7,
+    "total_retries": 0,
+    "total_words": 15450,
+    "total_citations": 20,
+    "diagrams": 1,
+    "source_grades": {"A": 16, "B": 4, "C": 0}
+  }
+}
