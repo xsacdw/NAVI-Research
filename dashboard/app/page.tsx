@@ -24,19 +24,27 @@ export default function Home() {
   const { locale, t } = useLocale();
   const isAdmin = useAdmin();
 
-  const [viewMode, setViewMode] = useState<ReadingSettings["viewMode"]>("dark");
+  const [readSettings, setReadSettings] = useState<ReadingSettings>(DEFAULT_SETTINGS);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const s = loadSettings();
-    setViewMode(s.viewMode);
+    setReadSettings(s);
     applyViewMode(s.viewMode);
     try {
       const raw = localStorage.getItem(HIDDEN_KEY);
       if (raw) setHiddenIds(new Set(JSON.parse(raw)));
     } catch {}
   }, []);
+
+  const toggleCollapse = (id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   const toggleHide = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -54,14 +62,6 @@ export default function Home() {
     localStorage.removeItem(HIDDEN_KEY);
   };
 
-  const toggleCollapse = (id: string) => {
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
   const getGroupSessions = (groupId: string) =>
     sessions.filter((s) => {
       if (!isAdmin && hiddenIds.has(s.id)) return false;
@@ -69,8 +69,8 @@ export default function Home() {
     });
 
   return (
-    <div className={`min-h-screen transition-colors ${getViewModeClasses(viewMode)}`}>
-      <Header />
+    <div className={`min-h-screen transition-colors ${getViewModeClasses(readSettings.viewMode)}`}>
+      <Header showSettings settings={readSettings} onSettingsChange={setReadSettings} />
 
       <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
         {/* Title */}
@@ -87,10 +87,7 @@ export default function Home() {
             <p className="text-xs sm:text-sm text-muted-foreground">{t.pageDesc}</p>
           </div>
           {isAdmin && hiddenIds.size > 0 && (
-            <button
-              onClick={restoreAll}
-              className="text-xs text-muted-foreground hover:text-foreground border rounded-lg px-3 py-1.5 transition-colors"
-            >
+            <button onClick={restoreAll} className="text-xs text-muted-foreground hover:text-foreground border rounded-lg px-3 py-1.5 transition-colors">
               숨김 {hiddenIds.size}개 복원
             </button>
           )}
@@ -105,7 +102,6 @@ export default function Home() {
 
             return (
               <div key={group.id}>
-                {/* Group header — only show if multiple groups */}
                 {groups.length > 1 && (
                   <button
                     onClick={() => toggleCollapse(group.id)}
@@ -117,7 +113,6 @@ export default function Home() {
                   </button>
                 )}
 
-                {/* Cards */}
                 {!isCollapsed && (
                   <div className="space-y-3">
                     {items.map((s) => {
@@ -131,9 +126,7 @@ export default function Home() {
                                 <CardTitle className={`text-base sm:text-lg leading-snug group-hover:text-indigo-400 transition-colors ${isHidden ? "line-through" : ""}`}>
                                   {loc.title}
                                 </CardTitle>
-                                {loc.subtitle && (
-                                  <p className="text-xs sm:text-sm text-muted-foreground">{loc.subtitle}</p>
-                                )}
+                                {loc.subtitle && <p className="text-xs sm:text-sm text-muted-foreground">{loc.subtitle}</p>}
                               </CardHeader>
                               <CardContent className="space-y-2 sm:space-y-3 px-4 sm:px-6">
                                 <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{loc.abstract}</p>
@@ -149,9 +142,7 @@ export default function Home() {
                                     {t.ptcs} {s.ptcs}%
                                   </Badge>
                                   <Badge variant="secondary">{translateType(s.type, t)}</Badge>
-                                  {isAdmin && (
-                                    <span className="ml-auto text-[10px] font-mono opacity-30 hidden sm:inline">{s.id}</span>
-                                  )}
+                                  {isAdmin && <span className="ml-auto text-[10px] font-mono opacity-30 hidden sm:inline">{s.id}</span>}
                                 </div>
                               </CardContent>
                             </Card>
