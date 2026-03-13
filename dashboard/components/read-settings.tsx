@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useLocale } from "@/components/locale-provider";
 
 interface ReadSettingsProps {
   open: boolean;
@@ -89,6 +90,7 @@ export function ReadSettings({
   onChange,
 }: ReadSettingsProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const { locale, toggle: toggleLocale } = useLocale();
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -232,6 +234,40 @@ export function ReadSettings({
               )}
             </span>
             {mode.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Language */}
+      <div className="border-t pt-3">
+        <div className="text-xs font-medium text-gray-500 dark:text-muted-foreground mb-2 uppercase tracking-wider">
+          언어
+        </div>
+        {[
+          { id: "ko" as const, label: "한국어" },
+          { id: "en" as const, label: "English" },
+        ].map((lang) => (
+          <button
+            key={lang.id}
+            onClick={() => { if (locale !== lang.id) toggleLocale(); }}
+            className={`flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm transition-colors ${
+              locale === lang.id
+                ? "text-indigo-600 dark:text-indigo-400 font-medium"
+                : "text-gray-600 dark:text-muted-foreground hover:bg-gray-50 dark:hover:bg-accent"
+            }`}
+          >
+            <span
+              className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                locale === lang.id
+                  ? "border-indigo-600 dark:border-indigo-400"
+                  : "border-gray-300 dark:border-muted-foreground/30"
+              }`}
+            >
+              {locale === lang.id && (
+                <span className="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+              )}
+            </span>
+            {lang.label}
           </button>
         ))}
       </div>
