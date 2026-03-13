@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "paperId": "abc123",
+      "title": "Attention Is All You Need",
+      "authors": [{"name": "Ashish Vaswani"}],
+      "year": 2017,
+      "externalIds": {"DOI": "10.48550/arXiv.1706.03762", "ArXiv": "1706.03762"},
+      "abstract": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks.",
+      "url": "https://www.semanticscholar.org/paper/abc123",
+      "citationCount": 120000,
+      "tldr": {"text": "A new network architecture based solely on attention mechanisms."},
+      "venue": "NeurIPS",
+      "isOpenAccess": true,
+      "openAccessPdf": {"url": "https://arxiv.org/pdf/1706.03762"}
+    }
+  ]
+}
