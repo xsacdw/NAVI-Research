@@ -24,7 +24,7 @@ def main() -> None:
     sp.add_argument("--limit", type=int, default=20, help="Max results (default: 20)")
     sp.add_argument("--year", help="Year range, e.g. 2024-2026")
     sp.add_argument("--source", default="all", help="Source: all, openalex, semantic, arxiv, core, crossref")
-    sp.add_argument("--output", default="./navi-results", help="Output directory")
+    sp.add_argument("--output", default="./docs/sessions/_search-cache", help="Output directory")
 
     # export command
     ep = sub.add_parser("export", help="Re-export results in different format")
