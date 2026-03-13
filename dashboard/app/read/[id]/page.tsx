@@ -1,9 +1,20 @@
+import type { Metadata } from "next";
 import { sessions } from "@/lib/data";
 import { loadThesisContent, extractToc, rewriteImagePaths, copyFiguresToPublic } from "@/lib/load-session";
 import { ReadClient } from "@/components/read-client";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const session = sessions.find((s) => s.id === id);
+  if (!session) return { title: "Not Found" };
+  return {
+    title: `${session.ko.title} — NAVI Research`,
+    description: session.ko.abstract,
+  };
 }
 
 export default async function ReadPage({ params }: PageProps) {

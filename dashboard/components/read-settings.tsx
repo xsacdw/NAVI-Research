@@ -35,6 +35,17 @@ export function loadSettings(): ReadingSettings {
 
 export function saveSettings(s: ReadingSettings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  applyViewMode(s.viewMode);
+}
+
+export function applyViewMode(mode: ReadingSettings["viewMode"]) {
+  if (typeof window === "undefined") return;
+  const html = document.documentElement;
+  if (mode === "dark") {
+    html.classList.add("dark");
+  } else {
+    html.classList.remove("dark");
+  }
 }
 
 export function getFontSize(level: number): string {
@@ -56,7 +67,18 @@ export function getViewModeClasses(mode: ReadingSettings["viewMode"]) {
     case "dark":
       return "bg-[#1A1A1A] text-[#D4D4D4]";
     default:
-      return "bg-[#FAFAFA] text-gray-900 dark:bg-background dark:text-foreground";
+      return "bg-[#FAFAFA] text-gray-900";
+  }
+}
+
+export function getHeaderClasses(mode: ReadingSettings["viewMode"]) {
+  switch (mode) {
+    case "sepia":
+      return "bg-[#F5F0E8]/90 border-[#E0D5C3]";
+    case "dark":
+      return "bg-[#1A1A1A]/90 border-[#333]";
+    default:
+      return "bg-white/90 border-border";
   }
 }
 

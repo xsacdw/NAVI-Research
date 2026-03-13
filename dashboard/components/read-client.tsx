@@ -14,9 +14,11 @@ import {
   ReadSettings,
   loadSettings,
   saveSettings,
+  applyViewMode,
   getFontSize,
   getLineHeight,
   getViewModeClasses,
+  getHeaderClasses,
   DEFAULT_SETTINGS,
   type ReadingSettings,
 } from "@/components/read-settings";
@@ -94,7 +96,9 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
   const [readSettings, setReadSettings] = useState<ReadingSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
-    setReadSettings(loadSettings());
+    const s = loadSettings();
+    setReadSettings(s);
+    applyViewMode(s.viewMode);
   }, []);
 
   const scrollToSection = useCallback((sectionId: string) => {
@@ -141,7 +145,7 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
   return (
     <div className={`min-h-screen transition-colors ${getViewModeClasses(readSettings.viewMode)}`}>
       {/* Top bar */}
-      <header className="sticky top-0 z-50 border-b bg-white/90 dark:bg-background/90 backdrop-blur-md">
+      <header className={`sticky top-0 z-50 border-b backdrop-blur-md ${getHeaderClasses(readSettings.viewMode)}`}>
         <div className="mx-auto max-w-6xl flex items-center justify-between px-4 h-14">
           <Link
             href="/"
