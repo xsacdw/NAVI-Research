@@ -278,7 +278,16 @@ PaperBanana 에이전트 방법론으로 학회 수준 다이어그램 생성:
 **출력:** `sessions/{name}/qa-report.md`
 
 **단계별 모드:** QA 결과 보여주고 "수정할까요?"
-**자동 모드:** PTCS 70% 이상 AND FactCheck 불일치 0개 AND Peer Review Overall 5+ 이면 통과, 미달 시 Step 4로 돌아가 1회 재작성
+**자동 모드 재시도 로직:**
+1. **1차 시도:** Step 4~6 실행
+2. **QA 통과 조건:** PTCS 70%+ AND FactCheck 불일치 0개 AND Peer Review Overall 5+
+3. **QA 실패 시:** 실패한 QA 항목만 피드백으로 포함하여 Step 4 재실행:
+   - GRA 실패 → 허구 인용 제거/교체
+   - PTCS < 70% → 약한 섹션만 보강
+   - FactCheck 불일치 → 해당 문장 수정
+   - Peer Review < 5 → 약점 3개 기반 개선
+4. **2차 시도:** QA 재실행 → 통과 시 Step 7, 미통과 시 결과와 함께 중단
+5. **최대 재시도: 1회** (무한루프 방지)
 
 ---
 
@@ -287,12 +296,28 @@ PaperBanana 에이전트 방법론으로 학회 수준 다이어그램 생성:
 1. 초안의 `{cite_XXX}` 토큰을 `(저자, 연도)` 형식으로 치환
 2. 논문 + 다이어그램 + References를 합쳐 최종본 생성 (한국어)
 3. Step 1에서 생성된 `results.bib`를 세션 output으로 복사 (이미 navi-research가 생성)
-4. `docs/sessions/index.md`에 이번 세션 정보 추가 (없으면 새로 생성)
+4. PDF/DOCX 변환 (pandoc):
+   ```bash
+   # PDF (한국어 폰트 지원)
+   pandoc thesis.md -o thesis.pdf \
+     --pdf-engine=xelatex \
+     --variable mainfont="Noto Sans CJK KR" \
+     -V geometry:margin=2.5cm -V fontsize=11pt \
+     --citeproc --bibliography=references.bib
+   
+   # DOCX
+   pandoc thesis.md -o thesis.docx \
+     --citeproc --bibliography=references.bib
+   ```
+   ⚠️ pandoc 미설치 시 MD만 출력하고 안내 메시지 표시
+5. `docs/sessions/index.md`에 이번 세션 정보 추가 (없으면 새로 생성)
 
 **출력:**
 ```
 docs/sessions/{주제}_{날짜}/output/
 ├── thesis.md           ← 최종 논문 (한국어, 인용 치환 완료)
+├── thesis.pdf          ← PDF (pandoc, 한국어 폰트)
+├── thesis.docx         ← DOCX (pandoc)
 ├── references.bib      ← BibTeX (Step 1에서 복사)
 ├── figures/             ← 다이어그램 파일
 └── qa-report.md        ← QA 결과
