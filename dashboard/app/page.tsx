@@ -289,7 +289,7 @@ export default function Home() {
                             {isSelected ? "✓" : ""}
                           </button>
                         )}
-                        <Link href={`/read/${s.id}`} className="flex-1 min-w-0">
+                        <Link href={`${isAdmin ? "/admin" : ""}/read/${s.id}`} className="flex-1 min-w-0">
                           <Card className="group cursor-pointer transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5">
                             <CardHeader className="pb-3">
                               <CardTitle className="text-lg leading-snug group-hover:text-indigo-400 transition-colors">
