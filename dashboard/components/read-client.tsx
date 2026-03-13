@@ -9,9 +9,11 @@ import { useLocale } from "@/components/locale-provider";
 import { sessions, sessionDetails } from "@/lib/data";
 
 export function ReadClient({ id }: { id: string }) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const session = sessionDetails[id] || sessions.find((s) => s.id === id);
   if (!session) notFound();
+
+  const loc = session[locale];
 
   return (
     <div className="min-h-screen bg-background">
@@ -20,11 +22,11 @@ export function ReadClient({ id }: { id: string }) {
       <article className="mx-auto max-w-3xl px-4 py-10">
         <header className="mb-10 border-b pb-8">
           <h1 className="mb-2 text-3xl font-bold leading-tight tracking-tight">
-            {session.title}
+            {loc.title}
           </h1>
-          {session.subtitle && (
+          {loc.subtitle && (
             <p className="mb-4 text-lg text-muted-foreground">
-              {session.subtitle}
+              {loc.subtitle}
             </p>
           )}
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -44,16 +46,15 @@ export function ReadClient({ id }: { id: string }) {
               PTCS {session.ptcs}%
             </Badge>
             <Badge variant="secondary">{session.type}</Badge>
-            <Badge variant="outline">{session.lang}</Badge>
           </div>
         </header>
 
         <blockquote className="mb-10 rounded-r-lg border-l-4 border-indigo-500 bg-indigo-500/5 px-5 py-4 text-sm italic text-muted-foreground">
-          {session.abstract}
+          {loc.abstract}
         </blockquote>
 
         <div className="prose-custom space-y-8">
-          {session.sections?.map((sec, i) => (
+          {loc.sections?.map((sec, i) => (
             <section key={i}>
               <h2 className="mb-4 border-b pb-2 text-xl font-semibold tracking-tight">
                 {sec.heading}
@@ -63,7 +64,7 @@ export function ReadClient({ id }: { id: string }) {
                   {paragraph}
                 </p>
               ))}
-              {session.figures
+              {loc.figures
                 ?.filter((f) => f.afterSection === i)
                 .map((fig, fi) => (
                   <figure key={fi} className="my-8">
@@ -79,11 +80,11 @@ export function ReadClient({ id }: { id: string }) {
           ))}
         </div>
 
-        {(session.references?.length ?? 0) > 0 && (
+        {(loc.references?.length ?? 0) > 0 && (
           <section className="mt-12 border-t pt-8">
             <h2 className="mb-4 text-lg font-semibold">{t.references}</h2>
             <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
-              {session.references?.map((ref, i) => (
+              {loc.references?.map((ref, i) => (
                 <li key={i} className="leading-relaxed">{ref}</li>
               ))}
             </ol>
