@@ -34,6 +34,8 @@ export function extractToc(markdown: string): TocItem[] {
     const text = match[2].trim();
     // Skip title line (first h1) and metadata lines
     if (level === 1 && items.length === 0) continue;
+    // Skip Abstract/초록 from TOC
+    if (/^(abstract|초록)$/i.test(text)) continue;
     // Create slug-style id
     const id = text
       .toLowerCase()
