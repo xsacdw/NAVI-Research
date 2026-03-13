@@ -73,7 +73,7 @@ export default async function ReadPage({ params }: PageProps) {
 
         {/* Sections */}
         <div className="prose-custom space-y-8">
-          {session.sections.map((sec, i) => (
+          {session.sections?.map((sec, i) => (
             <section key={i}>
               <h2 className="mb-4 border-b pb-2 text-xl font-semibold tracking-tight">
                 {sec.heading}
@@ -91,11 +91,11 @@ export default async function ReadPage({ params }: PageProps) {
         </div>
 
         {/* References */}
-        {session.references.length > 0 && (
+        {(session.references?.length ?? 0) > 0 && (
           <section className="mt-12 border-t pt-8">
             <h2 className="mb-4 text-lg font-semibold">참고문헌</h2>
             <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
-              {session.references.map((ref, i) => (
+              {session.references?.map((ref, i) => (
                 <li key={i} className="leading-relaxed">
                   {ref}
                 </li>
