@@ -1,7 +1,31 @@
 [project]
 name = "navi-research"
 version = "0.1.0"
-description = "Add your description here"
+description = "Academic paper search CLI using free scholarly APIs"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.0",
+    "rich>=13.0",
+]
+
+[project.scripts]
+navi-research = "navi_research.cli:main"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/navi_research"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
