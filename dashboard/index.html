@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NAVI Research — Dashboard</title>
-    <meta name="description" content="NAVI Research Dashboard — 논문 시뮬레이션 세션 관리 및 결과 열람">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app">
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
                     <span class="logo-icon">🧭</span>
@@ -19,26 +18,14 @@
                 </div>
                 <span class="version">v1.0</span>
             </div>
-
             <nav class="nav">
                 <a href="#" class="nav-item active" data-page="dashboard" id="nav-dashboard">
-                    <span class="nav-icon">📊</span>
-                    <span>대시보드</span>
+                    <span class="nav-icon">📊</span><span>대시보드</span>
                 </a>
                 <a href="#" class="nav-item" data-page="sessions" id="nav-sessions">
-                    <span class="nav-icon">📚</span>
-                    <span>세션 목록</span>
-                </a>
-                <a href="#" class="nav-item" data-page="search" id="nav-search">
-                    <span class="nav-icon">🔍</span>
-                    <span>문헌 검색</span>
-                </a>
-                <a href="#" class="nav-item" data-page="settings" id="nav-settings">
-                    <span class="nav-icon">⚙️</span>
-                    <span>설정</span>
+                    <span class="nav-icon">📚</span><span>세션 목록</span>
                 </a>
             </nav>
-
             <div class="sidebar-footer">
                 <div class="workflow-badge">
                     <span class="badge-dot"></span>
@@ -47,24 +34,14 @@
             </div>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main -->
         <main class="main">
-            <!-- Header -->
             <header class="header">
-                <div class="header-left">
-                    <button class="menu-btn" id="menu-toggle">☰</button>
-                    <h1 class="page-title" id="page-title">대시보드</h1>
-                </div>
-                <div class="header-right">
-                    <button class="btn btn-primary" id="new-simulation-btn">
-                        <span>+ 새 시뮬레이션</span>
-                    </button>
-                </div>
+                <h1 class="page-title" id="page-title">대시보드</h1>
             </header>
 
-            <!-- Dashboard Page -->
+            <!-- Dashboard -->
             <div class="page active" id="page-dashboard">
-                <!-- Stats Cards -->
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">📄</div>
@@ -96,174 +73,30 @@
                     </div>
                 </div>
 
-                <!-- Recent Sessions -->
+                <!-- Recent + QA -->
                 <div class="card">
                     <div class="card-header">
                         <h2>최근 시뮬레이션</h2>
-                        <a href="#" class="link" id="view-all-sessions">전체 보기 →</a>
+                        <a href="#" class="link" id="view-all">전체 보기 →</a>
                     </div>
-                    <div class="sessions-table" id="recent-sessions">
-                        <!-- Populated by JS -->
-                    </div>
+                    <div id="recent-sessions"></div>
                 </div>
 
-                <!-- Workflow & QA -->
-                <div class="grid-2">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>워크플로우</h2>
-                        </div>
-                        <div class="workflow-list" id="workflow-list">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>QA 현황</h2>
-                        </div>
-                        <div class="qa-dashboard" id="qa-dashboard">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
+                <div class="card">
+                    <div class="card-header"><h2>QA 현황</h2></div>
+                    <div class="qa-dashboard" id="qa-dashboard"></div>
                 </div>
             </div>
 
-            <!-- Sessions Page -->
+            <!-- Sessions -->
             <div class="page" id="page-sessions">
                 <div class="card">
-                    <div class="card-header">
-                        <h2>전체 세션</h2>
-                        <div class="filter-bar">
-                            <select id="filter-type" class="select">
-                                <option value="all">전체 유형</option>
-                                <option value="review">Literature Review</option>
-                                <option value="research">Research Paper</option>
-                                <option value="report">Report</option>
-                            </select>
-                            <select id="filter-lang" class="select">
-                                <option value="all">전체 언어</option>
-                                <option value="ko">한국어</option>
-                                <option value="en">영어</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="sessions-table" id="all-sessions">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Search Page -->
-            <div class="page" id="page-search">
-                <div class="card">
-                    <div class="card-header">
-                        <h2>문헌 검색</h2>
-                    </div>
-                    <div class="search-container">
-                        <div class="search-bar">
-                            <input type="text" id="search-input" class="input" placeholder="검색어를 입력하세요... (예: LLM agents)">
-                            <button class="btn btn-primary" id="search-btn">검색</button>
-                        </div>
-                        <div class="search-options">
-                            <label class="option-label">
-                                <span>Limit:</span>
-                                <input type="number" id="search-limit" class="input input-sm" value="20" min="1" max="50">
-                            </label>
-                            <label class="option-label">
-                                <span>Source:</span>
-                                <select id="search-source" class="select">
-                                    <option value="all">전체 (5 APIs)</option>
-                                    <option value="openalex">OpenAlex</option>
-                                    <option value="semantic">Semantic Scholar</option>
-                                    <option value="arxiv">arXiv</option>
-                                    <option value="core">CORE</option>
-                                    <option value="crossref">Crossref</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="search-results" id="search-results">
-                            <div class="empty-state">
-                                <span class="empty-icon">🔍</span>
-                                <p>검색어를 입력하고 검색 버튼을 누르세요</p>
-                                <p class="empty-hint">CLI: <code>navi-research search "주제" --limit 20</code></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Settings Page -->
-            <div class="page" id="page-settings">
-                <div class="card">
-                    <div class="card-header">
-                        <h2>시스템 정보</h2>
-                    </div>
-                    <div class="settings-grid" id="system-info">
-                        <!-- Populated by JS -->
-                    </div>
+                    <div class="card-header"><h2>전체 세션</h2></div>
+                    <div id="all-sessions"></div>
                 </div>
             </div>
         </main>
     </div>
-
-    <!-- New Simulation Modal -->
-    <div class="modal-overlay" id="modal-overlay">
-        <div class="modal" id="new-sim-modal">
-            <div class="modal-header">
-                <h2>🔬 새 시뮬레이션</h2>
-                <button class="modal-close" id="modal-close">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>주제</label>
-                    <input type="text" id="sim-topic" class="input" placeholder="연구 주제를 입력하세요">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>🔧 진행 모드</label>
-                        <select id="sim-mode" class="select">
-                            <option value="1">1. 단계별 확인</option>
-                            <option value="2">2. 자동 진행</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>📏 분량</label>
-                        <select id="sim-volume" class="select">
-                            <option value="1">1. 퀵 (5~10p)</option>
-                            <option value="2">2. 표준 (20~40p)</option>
-                            <option value="3">3. 풀 (100~200+p)</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>📝 논문 유형</label>
-                        <select id="sim-type" class="select">
-                            <option value="1">1. Literature Review</option>
-                            <option value="2">2. Research Paper</option>
-                            <option value="3">3. Report</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>🌐 언어</label>
-                        <select id="sim-lang" class="select">
-                            <option value="1">1. 영어</option>
-                            <option value="2">2. 한국어</option>
-                            <option value="3">3. 이중어</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="command-preview" id="command-preview">
-                    <code>대화창에서 실행: "논문 시뮬레이션 해줘" → 2-1-1-2</code>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="modal-cancel">취소</button>
-                <button class="btn btn-primary" id="modal-copy">📋 명령어 복사</button>
-            </div>
-        </div>
-    </div>
-
     <script src="app.js"></script>
 </body>
 </html>
