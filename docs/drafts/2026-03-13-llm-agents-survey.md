@@ -48,6 +48,10 @@ The key distinction between classical AI agents and LLM-based agents lies in the
 
 The architectural design of LLM-based agents has been extensively studied in recent surveys. Wang et al. (2023) propose a unified framework comprising three core modules: profiling, planning, and action. This framework, which has been cited over 2,400 times, serves as a foundational reference for subsequent research in the field.
 
+![Figure 1: Architecture of an LLM-based autonomous agent, comprising Profiling, Planning, Action, and Memory modules centered around the LLM Core.](figures/fig1_agent_architecture.png)
+
+*Figure 1: Unified architecture of LLM-based autonomous agents (adapted from Wang et al., 2023).*
+
 ### 3.1 Profiling Module
 
 The profiling module determines the role and persona of an agent. By assigning specific identities through system prompts or few-shot examples, agents can be configured to exhibit domain-specific behaviors. For instance, a software engineering agent may be instructed to follow coding conventions, while a financial analyst agent may be guided to prioritize risk assessment (Wang et al., 2023). Xi et al. (2023) further categorize profiling strategies into handcrafting, LLM-generation, and dataset alignment methods.
@@ -107,6 +111,10 @@ Multi-agent collaboration can be classified into several paradigms:
 - **Division of Labor:** Agents are assigned specialized roles (e.g., coder, tester, reviewer) and contribute their expertise to a shared objective. This pattern is exemplified by frameworks such as MetaGPT and ChatDev.
 - **Debate and Discussion:** Multiple agents engage in structured debate to arrive at consensus or refine solutions. This approach has been shown to improve reasoning accuracy by exposing individual agent errors through peer critique.
 - **Voting and Aggregation:** Agents independently generate solutions, which are then aggregated through voting or ranking mechanisms to produce a final answer.
+
+![Figure 2: Three multi-agent collaboration patterns — Division of Labor, Debate & Discussion, and Hierarchical coordination.](figures/fig2_multiagent_patterns.png)
+
+*Figure 2: Multi-agent collaboration patterns in LLM-based systems (adapted from Guo et al., 2024).*
 
 ### 5.2 Communication Protocols
 
