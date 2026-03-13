@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Header } from "@/components/header";
 import { useLocale } from "@/components/locale-provider";
+import { translateType } from "@/lib/i18n";
 import { sessions, sessionDetails } from "@/lib/data";
 
 export function ReadClient({ id }: { id: string }) {
@@ -43,9 +44,9 @@ export function ReadClient({ id }: { id: string }) {
                   : "bg-amber-500/15 text-amber-400"
               }
             >
-              PTCS {session.ptcs}%
+              {t.ptcs} {session.ptcs}%
             </Badge>
-            <Badge variant="secondary">{session.type}</Badge>
+            <Badge variant="secondary">{translateType(session.type, t)}</Badge>
           </div>
         </header>
 

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Header } from "@/components/header";
 import { useLocale } from "@/components/locale-provider";
+import { translateType } from "@/lib/i18n";
 import { sessions } from "@/lib/data";
 
 export default function Home() {
@@ -55,9 +56,9 @@ export default function Home() {
                           : "bg-amber-500/15 text-amber-400 hover:bg-amber-500/20"
                       }
                     >
-                      PTCS {s.ptcs}%
+                      {t.ptcs} {s.ptcs}%
                     </Badge>
-                    <Badge variant="secondary">{s.type}</Badge>
+                    <Badge variant="secondary">{translateType(s.type, t)}</Badge>
                   </div>
                 </CardContent>
               </Card>
