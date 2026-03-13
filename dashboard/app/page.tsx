@@ -69,10 +69,9 @@ export default function Home() {
       });
   }, []);
 
-  // --- Save folder structure to KV (debounced auto-save for admin) ---
+  // --- Save folder structure to KV (auto-save for admin) ---
   const saveToKV = useCallback(async (grps: SessionGroup[], sessions: Session[]) => {
     if (!isAdmin) return;
-    setSaveStatus("saving");
     const assignments: Record<string, string> = {};
     sessions.forEach(s => { assignments[s.id] = s.group || "default"; });
     try {
@@ -84,13 +83,15 @@ export default function Home() {
         },
         body: JSON.stringify({ groups: grps, assignments }),
       });
-      setSaveStatus(res.ok ? "saved" : "error");
+      if (res.ok) {
+        setSaveStatus("saved");
+        if (saveTimeout.current) clearTimeout(saveTimeout.current);
+        saveTimeout.current = setTimeout(() => setSaveStatus("idle"), 2000);
+      }
+      // 404 = API not available (local dev) → silently ignore
     } catch {
-      setSaveStatus("error");
+      // Network error (local dev) → silently ignore
     }
-    // Reset status after 2s
-    if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => setSaveStatus("idle"), 2000);
   }, [isAdmin]);
 
   // --- Group CRUD ---
@@ -149,8 +150,6 @@ export default function Home() {
     }
   };
 
-  // --- Manual save to KV ---
-  const manualSave = () => saveToKV(groups, sessionList);
 
   // --- Filter ---
   const getVisibleSessions = () => {
@@ -257,24 +256,18 @@ export default function Home() {
               </>
             )}
 
-            {/* Save to KV */}
-            {isAdmin && (
-              <div className="pt-4 border-t mt-4">
-                <button
-                  onClick={manualSave}
-                  disabled={saveStatus === "saving"}
-                  className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm transition-colors ${
-                    saveStatus === "saved" ? "text-green-400" :
-                    saveStatus === "error" ? "text-red-400" :
-                    saveStatus === "saving" ? "text-yellow-400" :
-                    "text-muted-foreground hover:bg-accent"
-                  }`}
-                >
+            {/* Auto-save status */}
+            {isAdmin && saveStatus !== "idle" && (
+              <div className="pt-3 border-t mt-4 px-3">
+                <span className={`text-xs ${
+                  saveStatus === "saved" ? "text-green-400" :
+                  saveStatus === "error" ? "text-red-400" :
+                  "text-yellow-400"
+                }`}>
                   {saveStatus === "saving" ? "⏳ 저장 중..." :
-                   saveStatus === "saved" ? "✅ 저장 완료!" :
-                   saveStatus === "error" ? "❌ 저장 실패" :
-                   "💾 서버에 저장"}
-                </button>
+                   saveStatus === "saved" ? "✅ 자동 저장됨" :
+                   "❌ 저장 실패"}
+                </span>
               </div>
             )}
           </div>
