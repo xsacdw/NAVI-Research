@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,39 +38,97 @@ export default function Home() {
   const [newGroupName, setNewGroupName] = useState("");
   const [showMoveDialog, setShowMoveDialog] = useState(false);
 
+  // KV save status
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // --- Load folder structure from KV on mount ---
   useEffect(() => {
     const s = loadSettings();
     setReadSettings(s);
     applyViewMode(s.viewMode);
+
+    // Fetch folder structure from KV
+    fetch("/api/folders")
+      .then(r => r.ok ? r.json() : null)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((data: any) => {
+        if (data && data.groups) {
+          setGroups(data.groups);
+          // Apply assignments to sessions
+          if (data.assignments) {
+            setSessionList(prev => prev.map(s => ({
+              ...s,
+              group: data.assignments[s.id] || s.group || "default"
+            })));
+          }
+        }
+      })
+      .catch(() => {
+        // KV not available (local dev), use static data
+      });
   }, []);
+
+  // --- Save folder structure to KV (debounced auto-save for admin) ---
+  const saveToKV = useCallback(async (grps: SessionGroup[], sessions: Session[]) => {
+    if (!isAdmin) return;
+    setSaveStatus("saving");
+    const assignments: Record<string, string> = {};
+    sessions.forEach(s => { assignments[s.id] = s.group || "default"; });
+    try {
+      const res = await fetch("/api/folders", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer quasar5-admin",
+        },
+        body: JSON.stringify({ groups: grps, assignments }),
+      });
+      setSaveStatus(res.ok ? "saved" : "error");
+    } catch {
+      setSaveStatus("error");
+    }
+    // Reset status after 2s
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => setSaveStatus("idle"), 2000);
+  }, [isAdmin]);
 
   // --- Group CRUD ---
   const createGroup = () => {
     if (!newGroupName.trim()) return;
     const id = newGroupName.trim().toLowerCase().replace(/[^a-z0-9가-힣]/g, "-").slice(0, 30) + "-" + Date.now().toString(36);
-    setGroups([...groups, { id, name: newGroupName.trim() }]);
+    const newGroups = [...groups, { id, name: newGroupName.trim() }];
+    setGroups(newGroups);
     setNewGroupName("");
     setShowCreateGroup(false);
+    saveToKV(newGroups, sessionList);
   };
 
   const renameGroup = (groupId: string) => {
     if (!editingName.trim()) return;
-    setGroups(groups.map(g => g.id === groupId ? { ...g, name: editingName.trim() } : g));
+    const newGroups = groups.map(g => g.id === groupId ? { ...g, name: editingName.trim() } : g);
+    setGroups(newGroups);
     setEditingGroupId(null);
     setEditingName("");
+    saveToKV(newGroups, sessionList);
   };
 
   const deleteGroup = (groupId: string) => {
     if (groupId === "default") return;
-    setGroups(groups.filter(g => g.id !== groupId));
-    setSessionList(sessionList.map(s => s.group === groupId ? { ...s, group: "default" } : s));
+    const newGroups = groups.filter(g => g.id !== groupId);
+    const newSessions = sessionList.map(s => s.group === groupId ? { ...s, group: "default" } : s);
+    setGroups(newGroups);
+    setSessionList(newSessions);
     if (activeGroupId === groupId) setActiveGroupId("all");
+    saveToKV(newGroups, newSessions);
   };
 
   const moveSessionsToGroup = (targetGroupId: string) => {
-    setSessionList(sessionList.map(s => selectedIds.has(s.id) ? { ...s, group: targetGroupId } : s));
+    const newSessions = sessionList.map(s => selectedIds.has(s.id) ? { ...s, group: targetGroupId } : s);
+    setSessionList(newSessions);
     setSelectedIds(new Set());
     setShowMoveDialog(false);
+    saveToKV(groups, newSessions);
   };
 
   const toggleSelect = (id: string) => {
@@ -91,17 +149,8 @@ export default function Home() {
     }
   };
 
-  // --- Export modified data ---
-  const exportJson = () => {
-    const data = { groups, sessions: sessionList };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "sessions.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  // --- Manual save to KV ---
+  const manualSave = () => saveToKV(groups, sessionList);
 
   // --- Filter ---
   const getVisibleSessions = () => {
@@ -208,14 +257,23 @@ export default function Home() {
               </>
             )}
 
-            {/* Export */}
+            {/* Save to KV */}
             {isAdmin && (
               <div className="pt-4 border-t mt-4">
                 <button
-                  onClick={exportJson}
-                  className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-accent transition-colors"
+                  onClick={manualSave}
+                  disabled={saveStatus === "saving"}
+                  className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm transition-colors ${
+                    saveStatus === "saved" ? "text-green-400" :
+                    saveStatus === "error" ? "text-red-400" :
+                    saveStatus === "saving" ? "text-yellow-400" :
+                    "text-muted-foreground hover:bg-accent"
+                  }`}
                 >
-                  💾 sessions.json 내보내기
+                  {saveStatus === "saving" ? "⏳ 저장 중..." :
+                   saveStatus === "saved" ? "✅ 저장 완료!" :
+                   saveStatus === "error" ? "❌ 저장 실패" :
+                   "💾 서버에 저장"}
                 </button>
               </div>
             )}
