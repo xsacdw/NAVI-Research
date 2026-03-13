@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,64 +9,299 @@ import { Header } from "@/components/header";
 import { useLocale } from "@/components/locale-provider";
 import { translateType } from "@/lib/i18n";
 import { sessions } from "@/lib/data";
+import { SessionMenu } from "@/components/session-menu";
+import { FolderDialog } from "@/components/folder-dialog";
+import {
+  getFolders,
+  createFolder,
+  renameFolder,
+  deleteFolder,
+  getSessionFolder,
+  moveSession,
+  removeSession,
+  type Folder,
+} from "@/lib/folder-store";
 
 export default function Home() {
   const { locale, t } = useLocale();
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [sessionFolders, setSessionFolders] = useState<Record<string, string>>(
+    {}
+  );
+  const [hiddenSessions, setHiddenSessions] = useState<Set<string>>(new Set());
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Dialogs
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [renamingFolder, setRenamingFolder] = useState<Folder | null>(null);
+
+  // Folder menu
+  const [folderMenuOpen, setFolderMenuOpen] = useState<string | null>(null);
+
+  const refreshState = useCallback(() => {
+    setFolders(getFolders());
+    const mapping: Record<string, string> = {};
+    sessions.forEach((s) => {
+      mapping[s.id] = getSessionFolder(s.id);
+    });
+    setSessionFolders(mapping);
+
+    // Load hidden sessions
+    try {
+      const raw = localStorage.getItem("navi-hidden-sessions");
+      setHiddenSessions(raw ? new Set(JSON.parse(raw)) : new Set());
+    } catch {
+      setHiddenSessions(new Set());
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshState();
+  }, [refreshState]);
+
+  const visibleSessions = sessions.filter((s) => !hiddenSessions.has(s.id));
+
+  const handleMoveSession = (sessionId: string, folderId: string) => {
+    moveSession(sessionId, folderId);
+    refreshState();
+  };
+
+  const handleDeleteSession = (sessionId: string) => {
+    const updated = new Set(hiddenSessions);
+    updated.add(sessionId);
+    localStorage.setItem(
+      "navi-hidden-sessions",
+      JSON.stringify([...updated])
+    );
+    removeSession(sessionId);
+    refreshState();
+  };
+
+  const handleCreateFolder = (name: string) => {
+    createFolder(name);
+    refreshState();
+  };
+
+  const handleRenameFolder = (name: string) => {
+    if (renamingFolder) {
+      renameFolder(renamingFolder.id, name);
+      refreshState();
+    }
+  };
+
+  const handleDeleteFolder = (folderId: string) => {
+    deleteFolder(folderId);
+    refreshState();
+  };
+
+  const toggleCollapse = (folderId: string) => {
+    setCollapsedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(folderId)) next.delete(folderId);
+      else next.add(folderId);
+      return next;
+    });
+  };
+
+  const getSessionsInFolder = (folderId: string) =>
+    visibleSessions.filter(
+      (s) => (sessionFolders[s.id] || "default") === folderId
+    );
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="mx-auto max-w-3xl space-y-4 px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight">{t.pageTitle}</h1>
-          <p className="text-sm text-muted-foreground">{t.pageDesc}</p>
+      <main className="mx-auto max-w-3xl space-y-2 px-4 py-8">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{t.pageTitle}</h1>
+            <p className="text-sm text-muted-foreground">{t.pageDesc}</p>
+          </div>
+          <button
+            onClick={() => setShowCreateFolder(true)}
+            className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-indigo-500/50 transition-all"
+          >
+            <span className="text-lg leading-none">+</span> 폴더
+          </button>
         </div>
 
-        {sessions.map((s) => {
-          const loc = s[locale];
+        {folders.map((folder) => {
+          const folderSessions = getSessionsInFolder(folder.id);
+          const isCollapsed = collapsedFolders.has(folder.id);
+
           return (
-            <Link key={s.id} href={`/read/${s.id}`}>
-              <Card className="group cursor-pointer transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 mb-4">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg leading-snug group-hover:text-indigo-400 transition-colors">
-                    {loc.title}
-                  </CardTitle>
-                  {loc.subtitle && (
-                    <p className="text-sm text-muted-foreground">{loc.subtitle}</p>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {loc.abstract}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span>📅 {s.date}</span>
-                    <Separator orientation="vertical" className="h-3" />
-                    <span>{s.words.toLocaleString()} {t.words}</span>
-                    <Separator orientation="vertical" className="h-3" />
-                    <span>📚 {s.citations} {t.citations}</span>
-                    <Separator orientation="vertical" className="h-3" />
-                    <span>🖼️ {s.diagrams} {t.figures}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Badge
-                      className={
-                        s.ptcs >= 80
-                          ? "bg-green-500/15 text-green-400 hover:bg-green-500/20"
-                          : "bg-amber-500/15 text-amber-400 hover:bg-amber-500/20"
+            <div key={folder.id} className="mb-4">
+              {/* Folder Header */}
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  onClick={() => toggleCollapse(folder.id)}
+                  className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span
+                    className={`transition-transform ${isCollapsed ? "" : "rotate-90"}`}
+                  >
+                    ▶
+                  </span>
+                  📁 {folder.name}
+                  <span className="text-xs opacity-50">
+                    ({folderSessions.length})
+                  </span>
+                </button>
+
+                {folder.id !== "default" && (
+                  <div className="relative ml-auto">
+                    <button
+                      onClick={() =>
+                        setFolderMenuOpen(
+                          folderMenuOpen === folder.id ? null : folder.id
+                        )
                       }
+                      className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                     >
-                      {t.ptcs} {s.ptcs}%
-                    </Badge>
-                    <Badge variant="secondary">{translateType(s.type, t)}</Badge>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                      >
+                        <circle cx="3" cy="8" r="1.5" />
+                        <circle cx="8" cy="8" r="1.5" />
+                        <circle cx="13" cy="8" r="1.5" />
+                      </svg>
+                    </button>
+                    {folderMenuOpen === folder.id && (
+                      <div className="absolute right-0 top-7 z-50 w-36 rounded-lg border bg-popover p-1 shadow-lg animate-in fade-in-0 zoom-in-95">
+                        <button
+                          onClick={() => {
+                            setRenamingFolder(folder);
+                            setFolderMenuOpen(null);
+                          }}
+                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+                        >
+                          ✏️ 이름 변경
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleDeleteFolder(folder.id);
+                            setFolderMenuOpen(null);
+                          }}
+                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          🗑️ 삭제
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
+                )}
+              </div>
+
+              {/* Session Cards */}
+              {!isCollapsed && (
+                <div className="space-y-3 pl-5">
+                  {folderSessions.length === 0 && (
+                    <p className="text-xs text-muted-foreground py-2 italic">
+                      비어 있음
+                    </p>
+                  )}
+                  {folderSessions.map((s) => {
+                    const loc = s[locale];
+                    return (
+                      <div key={s.id} className="flex items-start gap-2">
+                        <Link href={`/read/${s.id}`} className="flex-1 min-w-0">
+                          <Card className="group cursor-pointer transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5">
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-lg leading-snug group-hover:text-indigo-400 transition-colors">
+                                {loc.title}
+                              </CardTitle>
+                              {loc.subtitle && (
+                                <p className="text-sm text-muted-foreground">
+                                  {loc.subtitle}
+                                </p>
+                              )}
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {loc.abstract}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                <span>📅 {s.date}</span>
+                                <Separator
+                                  orientation="vertical"
+                                  className="h-3"
+                                />
+                                <span>
+                                  {s.words.toLocaleString()} {t.words}
+                                </span>
+                                <Separator
+                                  orientation="vertical"
+                                  className="h-3"
+                                />
+                                <span>
+                                  📚 {s.citations} {t.citations}
+                                </span>
+                                <Separator
+                                  orientation="vertical"
+                                  className="h-3"
+                                />
+                                <span>
+                                  🖼️ {s.diagrams} {t.figures}
+                                </span>
+                              </div>
+                              <div className="flex gap-2">
+                                <Badge
+                                  className={
+                                    s.ptcs >= 80
+                                      ? "bg-green-500/15 text-green-400 hover:bg-green-500/20"
+                                      : "bg-amber-500/15 text-amber-400 hover:bg-amber-500/20"
+                                  }
+                                >
+                                  {t.ptcs} {s.ptcs}%
+                                </Badge>
+                                <Badge variant="secondary">
+                                  {translateType(s.type, t)}
+                                </Badge>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                        <div className="pt-4">
+                          <SessionMenu
+                            sessionId={s.id}
+                            folders={folders}
+                            currentFolderId={
+                              sessionFolders[s.id] || "default"
+                            }
+                            onMove={handleMoveSession}
+                            onDelete={handleDeleteSession}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </main>
+
+      <FolderDialog
+        open={showCreateFolder}
+        onClose={() => setShowCreateFolder(false)}
+        onSubmit={handleCreateFolder}
+        title="새 폴더"
+      />
+
+      <FolderDialog
+        open={!!renamingFolder}
+        onClose={() => setRenamingFolder(null)}
+        onSubmit={handleRenameFolder}
+        title="폴더 이름 변경"
+        initialValue={renamingFolder?.name || ""}
+      />
     </div>
   );
 }

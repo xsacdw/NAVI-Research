@@ -84,4 +84,26 @@ export const sessions: Session[] = [
         "AI technology heralds the most fundamental economic paradigm shift since the Industrial Revolution. This study systematically analyzes the multidimensional impact of AI on macroeconomics, labor markets, industrial structure, and income distribution.",
     },
   },
+  {
+    id: "sleep-cycle",
+    folder: "sleep-cycle_2026-03-13",
+    date: "2026-03-13",
+    type: "Research Paper",
+    words: 3113,
+    citations: 5,
+    ptcs: 75,
+    diagrams: 0,
+    ko: {
+      title: "수면 사이클의 메커니즘과 건강에 미치는 영향",
+      subtitle: "최신 연구 동향",
+      abstract:
+        "본 연구는 수면 사이클의 생리학적 메커니즘과 건강에 미치는 영향을 체계적으로 고찰한다. NREM과 REM 단계로 구성된 약 90분 주기의 반복 과정과 이중 조절 모델을 분석한다.",
+    },
+    en: {
+      title: "Mechanisms of Sleep Cycles and Their Health Impact",
+      subtitle: "Recent Research Trends",
+      abstract:
+        "This study systematically reviews the physiological mechanisms of sleep cycles and their health effects, analyzing the ~90-minute NREM-REM cycle and the dual regulatory model.",
+    },
+  },
 ];
