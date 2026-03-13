@@ -74,6 +74,27 @@ export const sessions: Session[] = [
         "This survey reviews the architecture and collaboration patterns of LLM-based autonomous agents, covering profiling, memory, planning, and action modules.",
     },
   },
+  {
+    id: "ai-economy-future",
+    date: "2026-03-13",
+    type: "Research Paper",
+    words: 28364,
+    citations: 23,
+    ptcs: 85,
+    diagrams: 2,
+    ko: {
+      title: "AI 시대의 경제 미래",
+      subtitle: "거시경제, 노동시장, 산업구조의 전환에 관한 연구",
+      abstract:
+        "인공지능(AI) 기술은 18세기 산업혁명 이래 가장 근본적인 경제 패러다임의 전환을 예고하고 있다. 본 연구는 AI가 거시경제, 노동시장, 산업구조, 소득 분배에 미치는 다차원적 영향을 체계적으로 분석한다.",
+    },
+    en: {
+      title: "The Economic Future in the Age of AI",
+      subtitle: "A Study on Macroeconomic, Labor Market, and Industrial Structure Transformation",
+      abstract:
+        "AI technology heralds the most fundamental economic paradigm shift since the Industrial Revolution. This study systematically analyzes the multidimensional impact of AI on macroeconomics, labor markets, industrial structure, and income distribution.",
+    },
+  },
 ];
 
 // Full session data with localized content
