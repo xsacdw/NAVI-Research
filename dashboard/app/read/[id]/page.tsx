@@ -1,39 +1,28 @@
+"use client";
+
+import { use } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Header } from "@/components/header";
+import { useLocale } from "@/components/locale-provider";
 import { sessions, sessionDetails } from "@/lib/data";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function ReadPage({ params }: PageProps) {
-  const { id } = await params;
+export default function ReadPage({ params }: PageProps) {
+  const { id } = use(params);
+  const { t } = useLocale();
   const session = sessionDetails[id] || sessions.find((s) => s.id === id);
   if (!session) notFound();
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🧭</span>
-            <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-lg font-bold text-transparent">
-              NAVI Research
-            </span>
-          </div>
-          <Link
-            href="/"
-            className="rounded-md border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-indigo-500 hover:text-indigo-400"
-          >
-            ← 목록으로
-          </Link>
-        </div>
-      </header>
+      <Header showBack />
 
-      {/* Article */}
       <article className="mx-auto max-w-3xl px-4 py-10">
         {/* Title */}
         <header className="mb-10 border-b pb-8">
@@ -48,9 +37,9 @@ export default async function ReadPage({ params }: PageProps) {
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span>📅 {session.date}</span>
             <Separator orientation="vertical" className="h-4" />
-            <span>{session.words.toLocaleString()} words</span>
+            <span>{session.words.toLocaleString()} {t.words}</span>
             <Separator orientation="vertical" className="h-4" />
-            <span>📚 {session.citations} citations</span>
+            <span>📚 {session.citations} {t.citations}</span>
             <Separator orientation="vertical" className="h-4" />
             <Badge
               className={
@@ -86,17 +75,12 @@ export default async function ReadPage({ params }: PageProps) {
                   {paragraph}
                 </p>
               ))}
-              {/* Figures after this section */}
               {session.figures
                 ?.filter((f) => f.afterSection === i)
                 .map((fig, fi) => (
                   <figure key={fi} className="my-8">
                     <div className="overflow-hidden rounded-lg border bg-card">
-                      <img
-                        src={fig.src}
-                        alt={fig.caption}
-                        className="w-full"
-                      />
+                      <img src={fig.src} alt={fig.caption} className="w-full" />
                     </div>
                     <figcaption className="mt-2 text-center text-sm italic text-muted-foreground">
                       {fig.caption}
@@ -110,7 +94,7 @@ export default async function ReadPage({ params }: PageProps) {
         {/* References */}
         {(session.references?.length ?? 0) > 0 && (
           <section className="mt-12 border-t pt-8">
-            <h2 className="mb-4 text-lg font-semibold">참고문헌</h2>
+            <h2 className="mb-4 text-lg font-semibold">{t.references}</h2>
             <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
               {session.references?.map((ref, i) => (
                 <li key={i} className="leading-relaxed">
@@ -127,14 +111,10 @@ export default async function ReadPage({ params }: PageProps) {
             href="/"
             className="rounded-md border px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-indigo-500 hover:text-indigo-400"
           >
-            ← 목록으로 돌아가기
+            {t.backToListFull}
           </Link>
         </div>
       </article>
     </div>
   );
-}
-
-export function generateStaticParams() {
-  return sessions.map((s) => ({ id: s.id }));
 }
