@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Header } from "@/components/header";
 import { useLocale } from "@/components/locale-provider";
+import { useAdmin } from "@/components/admin-provider";
 import { translateType } from "@/lib/i18n";
 import { sessions } from "@/lib/data";
 import { SessionMenu } from "@/components/session-menu";
@@ -24,6 +25,7 @@ import {
 
 export default function Home() {
   const { locale, t } = useLocale();
+  const isAdmin = useAdmin();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [sessionFolders, setSessionFolders] = useState<Record<string, string>>(
     {}
@@ -165,12 +167,14 @@ export default function Home() {
             <h1 className="text-2xl font-bold tracking-tight">{t.pageTitle}</h1>
             <p className="text-sm text-muted-foreground">{t.pageDesc}</p>
           </div>
-          <button
-            onClick={() => setShowCreateFolder(true)}
-            className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-indigo-500/50 transition-all"
-          >
-            <span className="text-lg leading-none">+</span> 폴더
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setShowCreateFolder(true)}
+              className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-indigo-500/50 transition-all"
+            >
+              <span className="text-lg leading-none">+</span> 폴더
+            </button>
+          )}
         </div>
 
         {folders.map((folder) => {
@@ -181,8 +185,8 @@ export default function Home() {
             <div key={folder.id} className="mb-4">
               {/* Folder Header */}
               <div className="flex items-center gap-2 mb-2">
-                {/* Select all checkbox */}
-                {folderSessions.length > 0 && (
+                {/* Select all checkbox (admin only) */}
+                {isAdmin && folderSessions.length > 0 && (
                   <button
                     onClick={() => selectAllInFolder(folder.id)}
                     className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] transition-colors ${
@@ -212,7 +216,7 @@ export default function Home() {
                   </span>
                 </button>
 
-                {folder.id !== "default" && (
+                {isAdmin && folder.id !== "default" && (
                   <div className="relative ml-auto">
                     <button
                       onClick={() =>
@@ -272,17 +276,19 @@ export default function Home() {
                     const isSelected = selected.has(s.id);
                     return (
                       <div key={s.id} className={`flex items-start gap-2 rounded-lg transition-colors ${isSelected ? "bg-indigo-500/5" : ""}`}>
-                        {/* Checkbox */}
-                        <button
-                          onClick={() => toggleSelect(s.id)}
-                          className={`mt-5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-[10px] transition-colors ${
-                            isSelected
-                              ? "bg-indigo-600 border-indigo-600 text-white"
-                              : "border-muted-foreground/30 hover:border-indigo-500"
-                          }`}
-                        >
-                          {isSelected ? "✓" : ""}
-                        </button>
+                        {/* Checkbox (admin only) */}
+                        {isAdmin && (
+                          <button
+                            onClick={() => toggleSelect(s.id)}
+                            className={`mt-5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-[10px] transition-colors ${
+                              isSelected
+                                ? "bg-indigo-600 border-indigo-600 text-white"
+                                : "border-muted-foreground/30 hover:border-indigo-500"
+                            }`}
+                          >
+                            {isSelected ? "✓" : ""}
+                          </button>
+                        )}
                         <Link href={`/read/${s.id}`} className="flex-1 min-w-0">
                           <Card className="group cursor-pointer transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5">
                             <CardHeader className="pb-3">
@@ -340,17 +346,19 @@ export default function Home() {
                             </CardContent>
                           </Card>
                         </Link>
-                        <div className="pt-4">
-                          <SessionMenu
-                            sessionId={s.id}
-                            folders={folders}
-                            currentFolderId={
-                              sessionFolders[s.id] || "default"
-                            }
-                            onMove={handleMoveSession}
-                            onDelete={handleDeleteSession}
-                          />
-                        </div>
+                        {isAdmin && (
+                          <div className="pt-4">
+                            <SessionMenu
+                              sessionId={s.id}
+                              folders={folders}
+                              currentFolderId={
+                                sessionFolders[s.id] || "default"
+                              }
+                              onMove={handleMoveSession}
+                              onDelete={handleDeleteSession}
+                            />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -361,8 +369,8 @@ export default function Home() {
         })}
       </main>
 
-      {/* Bulk action bar */}
-      {selected.size > 0 && (
+      {/* Bulk action bar (admin only) */}
+      {isAdmin && selected.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-card border rounded-full px-5 py-2.5 shadow-2xl animate-in slide-in-from-bottom-4">
           <span className="text-sm font-medium">
             {selected.size}개 선택
