@@ -26,5 +26,19 @@
     "diagrams": 2,
     "abstract": "This survey reviews the architecture and collaboration patterns of LLM-based autonomous agents.",
     "path": "docs/sessions/llm-agents-survey/output/thesis.md"
+  },
+  {
+    "id": "sleep-cycle",
+    "title": "수면 사이클의 메커니즘과 건강에 미치는 영향",
+    "subtitle": "최신 연구 동향",
+    "date": "2026-03-13",
+    "type": "Research Paper",
+    "lang": "한국어",
+    "words": 3113,
+    "citations": 5,
+    "ptcs": 75,
+    "diagrams": 0,
+    "abstract": "본 연구는 수면 사이클의 생리학적 메커니즘과 건강에 미치는 영향을 체계적으로 고찰한다. NREM과 REM 단계로 구성된 약 90분 주기의 반복 과정과, 일주기 리듬과 항상성 수면 압력의 이중 조절 모델을 분석한다.",
+    "path": "docs/sessions/sleep-cycle_2026-03-13/output/thesis.md"
   }
 ]
