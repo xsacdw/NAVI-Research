@@ -29,7 +29,7 @@ def main() -> None:
     # export command
     ep = sub.add_parser("export", help="Re-export results in different format")
     ep.add_argument("--format", choices=["json", "markdown", "bibtex"], default="markdown")
-    ep.add_argument("--input", default="./navi-results/results.json", help="Input JSON file")
+    ep.add_argument("--input", default="./docs/sessions/_search-cache/results.json", help="Input JSON file")
 
     args = parser.parse_args()
 
@@ -50,7 +50,7 @@ async def _search(args: Any) -> None:
     console.print(f"   Limit: {args.limit}\n")
 
     with console.status("[bold green]Searching 5 APIs in parallel..."):
-        papers = await orch.search(args.query, limit=args.limit, sources=sources)
+        papers = await orch.search(args.query, limit=args.limit, year=args.year, sources=sources)
 
     console.print(f"[green]✅ Found {len(papers)} papers[/green]\n")
 

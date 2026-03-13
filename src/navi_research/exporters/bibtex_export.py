@@ -5,7 +5,6 @@ def export_bibtex(papers: list[Paper]) -> str:
     """논문 목록을 BibTeX 문자열로 변환"""
     entries = []
     for i, p in enumerate(papers, 1):
-        key = p.doi.replace("/", "_").replace(".", "_") if p.doi else f"paper_{i}"
         first_author = p.authors[0].split(",")[0].split()[-1].lower() if p.authors else "unknown"
         key = f"{first_author}{p.year}_{i}"
 
