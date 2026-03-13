@@ -37,17 +37,30 @@ description: Superpowers 전체 개발 워크플로우 — 브레인스토밍부
 4. **디버깅** (필요 시 `/debugging` 참조)
 5. **리뷰 & 마무리**
 
-## Phase 전환 시 자체 점검
+## Phase 전환 시 자동 게이트 검증
 
-각 Phase 전환 시 아래 체크리스트를 **반드시** 출력한다:
+각 Phase 전환 시 아래 명령어를 **자동 실행**하여 게이트를 검증한다:
 
+// turbo
+```bash
+# GATE 1: 설계 문서 존재 확인
+ls docs/specs/*design.md 2>/dev/null && echo "✅ GATE 1 통과" || echo "❌ GATE 1 실패: docs/specs/에 설계 문서 없음"
 ```
-🔍 슈퍼파워즈 게이트 점검:
-□ GATE 1: 설계 문서 docs/specs/에 저장했는가?
-□ GATE 2: 테스트를 먼저 작성했는가? (코드 변경 시)
-□ GATE 3: 이전 Task를 커밋했는가?
-→ 하나라도 □이면 진행 불가. 먼저 수행한다.
+
+// turbo
+```bash
+# GATE 2: 테스트 통과 확인 (코드 변경 시)
+pytest tests/ -v --tb=short 2>&1 | tail -5
 ```
+
+// turbo
+```bash
+# GATE 3: 이전 Task 커밋 확인
+[ -z "$(git status --short)" ] && echo "✅ GATE 3 통과" || echo "❌ GATE 3 실패: 커밋되지 않은 변경사항 있음"
+```
+
+→ 모든 게이트가 ✅일 때만 다음 Phase로 진행
+→ 하나라도 ❌이면 해당 게이트를 먼저 충족시킨 후 재실행
 
 ## 핵심 원칙
 

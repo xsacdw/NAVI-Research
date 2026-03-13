@@ -296,16 +296,20 @@ PaperBanana 에이전트 방법론으로 학회 수준 다이어그램 생성:
 **출력:** `sessions/{name}/qa-report.md`
 
 **단계별 모드:** QA 결과 보여주고 "수정할까요?"
-**자동 모드 재시도 로직:**
+**자동 모드 재시도 로직 (OpenClaw-RL PRM 패턴 적용):**
 1. **1차 시도:** Step 4~6 실행
 2. **QA 통과 조건:** PTCS 70%+ AND FactCheck 불일치 0개 AND Peer Review Overall 5+
-3. **QA 실패 시:** 실패한 QA 항목만 피드백으로 포함하여 Step 4 재실행:
-   - GRA 실패 → 허구 인용 제거/교체
-   - PTCS < 70% → 약한 섹션만 보강
-   - FactCheck 불일치 → 해당 문장 수정
-   - Peer Review < 5 → 약점 3개 기반 개선
-4. **2차 시도:** QA 재실행 → 통과 시 Step 7, 미통과 시 결과와 함께 중단
-5. **최대 재시도: 1회** (무한루프 방지)
+3. **QA 실패 시 — 구체적 수정 힌트 생성:**
+   각 실패 항목에서 "무엇을 어떻게 고쳐야 하는지" 구체적 힌트를 추출한다:
+   - GRA 실패 → "Section 3에 cite_012, cite_015 추가 가능 (주제 일치)"
+   - PTCS < 70% → "Section 5 인용 밀도 1.2/page → 기준 3/page, 관련 논문: cite_008, cite_021"
+   - FactCheck ❌ → "L42 '85%' 수치 → cite_003 원문에서는 '78%', 수정 필요"
+   - Peer Review 약점 → "Methodology 섹션의 분석 근거가 부족 → cite_009의 프레임워크 참조"
+   - Thread 불일치 → "Introduction L12 '3가지 질문' → Results에서 2번째 질문 미답변"
+   **힌트 포함하여 실패 섹션만 재작성** (전체 재작성 금지)
+4. **2차 시도:** 수정된 섹션으로 QA 재실행 → 통과 시 Step 7, 미통과 시 3차 시도
+5. **3차 시도:** 최종 QA → 통과 여부 무관하게 결과와 함께 완료
+6. **최대 재시도: 2회** (무한루프 방지)
 
 ---
 
@@ -338,8 +342,49 @@ docs/sessions/{주제}_{날짜}/output/
 ├── thesis.docx         ← DOCX (pandoc)
 ├── references.bib      ← BibTeX (Step 1에서 복사)
 ├── figures/             ← 다이어그램 파일
-└── qa-report.md        ← QA 결과
+├── qa-report.md        ← QA 결과
+└── prompt-log.json     ← 프롬프트 + QA 점수 기록
 ```
+
+### Step 7.5: 📊 프롬프트 기록 (OpenClaw-RL record 패턴)
+
+각 섹션별 작성 파라미터와 QA 결과를 기록한다:
+
+```json
+{
+  "session_id": "{주제}_{날짜}",
+  "timestamp": "2026-03-13T21:00:00",
+  "sections": [
+    {
+      "name": "Introduction",
+      "citations_used": 5,
+      "word_count": 1200,
+      "retries": 0,
+      "qa_notes": "통과"
+    },
+    {
+      "name": "Related Work",
+      "citations_used": 12,
+      "word_count": 3500,
+      "retries": 1,
+      "qa_notes": "1차 인용밀도 부족 → cite_008 추가 후 통과"
+    }
+  ],
+  "overall": {
+    "ptcs": 78,
+    "peer_review": 6,
+    "total_retries": 1,
+    "total_words": 15000,
+    "total_citations": 25
+  }
+}
+```
+
+**출력:** `sessions/{name}/output/prompt-log.json`
+
+다음 논문 생성 시, 이전 세션의 `prompt-log.json`을 참조하여:
+- 고득점 섹션의 인용 밀도/분량 패턴 재사용
+- 재시도가 잦았던 섹션 유형에 사전 보강
 
 **index.md 자동 업데이트:**
 ```markdown
