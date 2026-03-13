@@ -31,3 +31,10 @@ dashboard/node_modules/
 dashboard/.next/
 dashboard/out/
 refs/
+dashboard/
+refs/GPT-Researcher/
+refs/SynapseFlow/
+refs/OpenDraft/
+refs/PaperBanana/
+refs/AI-Scientist/
+refs/ScholarCopilot/
