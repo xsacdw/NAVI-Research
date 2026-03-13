@@ -185,6 +185,41 @@ docs/sessions/{주제}_{날짜}/output/
 | 1 | 2026-03-13 | LLM Agents | 표준 | 72% | 한국어 | [열기](llm-agents_2026-03-13/output/) |
 ```
 
+---
+
+## Step 8: 🌐 대시보드 배포
+
+1. `dashboard/public/sessions.json`을 읽고, 이번 세션 메타데이터를 추가한다:
+```json
+{
+  "id": "{주제-slug}",
+  "title": "{논문 제목}",
+  "subtitle": "{부제}",
+  "date": "{YYYY-MM-DD}",
+  "type": "{논문 유형}",
+  "lang": "{언어}",
+  "words": {단어수},
+  "citations": {인용수},
+  "ptcs": {PTCS점수},
+  "diagrams": {다이어그램수},
+  "abstract": "{초록}",
+  "path": "docs/sessions/{주제}_{날짜}/output/thesis.md"
+}
+```
+2. `dashboard/lib/data.ts`의 `sessionDetails`에 해당 세션의 본문(sections, references)을 추가한다.
+3. Git commit + push:
+```bash
+git add docs/sessions/ dashboard/public/sessions.json dashboard/lib/data.ts
+git commit -m "paper: {주제} — PTCS {N}%"
+git push origin main
+```
+4. Cloudflare Pages가 자동으로 재빌드 → https://navi-pj.pages.dev 에 즉시 반영
+
+**단계별 모드:** "대시보드에 등록하고 배포할까요?"
+**자동 모드:** 자동 push
+
+---
+
 최종 보고:
 ```
 ✅ 시뮬레이션 완료!
@@ -199,4 +234,6 @@ docs/sessions/{주제}_{날짜}/output/
 
 📁 저장 위치: docs/sessions/{주제}_{날짜}/output/
 📋 전체 목록: docs/sessions/index.md
+🌐 대시보드: https://navi-pj.pages.dev
 ```
+
