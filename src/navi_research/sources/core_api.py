@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 
 from navi_research.models import Paper
@@ -8,7 +10,7 @@ BASE_URL = "https://api.core.ac.uk/v3"
 class CoreSource:
     """CORE API — OA 풀텍스트 최대 규모"""
 
-    async def _fetch(self, params: dict) -> dict:
+    async def _fetch(self, params: dict[str, Any]) -> dict[str, Any]:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"{BASE_URL}/search/works",
@@ -16,17 +18,22 @@ class CoreSource:
                 timeout=30,
             )
             resp.raise_for_status()
-            return resp.json()
+            result: dict[str, Any] = resp.json()
+            return result
 
     async def search(self, query: str, limit: int = 20) -> list[Paper]:
-        params = {"q": query, "limit": min(limit, 50)}
+        params: dict[str, Any] = {"q": query, "limit": min(limit, 50)}
         try:
             data = await self._fetch(params)
         except (httpx.HTTPStatusError, httpx.ConnectError):
             return []  # CORE가 응답하지 않으면 빈 결과
-        return [self._to_paper(r) for r in data.get("results", [])[:limit]]
+        results: list[dict[str, Any]] = data.get("results", [])
+        return [self._to_paper(r) for r in results[:limit]]
 
-    def _to_paper(self, item: dict) -> Paper:
+    def _to_paper(self, item: dict[str, Any]) -> Paper:
+        source_urls: list[str] = item.get("sourceFulltextUrls", [])
+        url = item.get("downloadUrl") or (source_urls[0] if source_urls else None)
+
         return Paper(
             title=item.get("title", "Untitled"),
             authors=[a.get("name", "") for a in item.get("authors", [])],
@@ -34,6 +41,6 @@ class CoreSource:
             source="core",
             doi=item.get("doi"),
             abstract=item.get("abstract"),
-            url=item.get("downloadUrl") or item.get("sourceFulltextUrls", [None])[0] if item.get("sourceFulltextUrls") else None,
+            url=url,
             pdf_url=item.get("downloadUrl"),
         )

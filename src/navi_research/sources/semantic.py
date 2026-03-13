@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 
 from navi_research.models import Paper
@@ -9,7 +11,7 @@ FIELDS = "paperId,title,authors,year,externalIds,abstract,url,citationCount,tldr
 class SemanticScholarSource:
     """Semantic Scholar API — AI 요약(TLDR) + 추천"""
 
-    async def _fetch(self, params: dict) -> dict:
+    async def _fetch(self, params: dict[str, Any]) -> dict[str, Any]:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"{BASE_URL}/paper/search",
@@ -17,10 +19,11 @@ class SemanticScholarSource:
                 timeout=30,
             )
             resp.raise_for_status()
-            return resp.json()
+            result: dict[str, Any] = resp.json()
+            return result
 
     async def search(self, query: str, limit: int = 20, year: str | None = None) -> list[Paper]:
-        params = {
+        params: dict[str, Any] = {
             "query": query,
             "limit": min(limit, 100),
             "fields": FIELDS,
@@ -29,12 +32,13 @@ class SemanticScholarSource:
             params["year"] = year
 
         data = await self._fetch(params)
-        return [self._to_paper(p) for p in data.get("data", [])[:limit]]
+        items: list[dict[str, Any]] = data.get("data", [])
+        return [self._to_paper(p) for p in items[:limit]]
 
-    def _to_paper(self, item: dict) -> Paper:
-        ext_ids = item.get("externalIds") or {}
-        oa_pdf = item.get("openAccessPdf") or {}
-        tldr_obj = item.get("tldr") or {}
+    def _to_paper(self, item: dict[str, Any]) -> Paper:
+        ext_ids: dict[str, Any] = item.get("externalIds") or {}
+        oa_pdf: dict[str, Any] = item.get("openAccessPdf") or {}
+        tldr_obj: dict[str, Any] = item.get("tldr") or {}
 
         return Paper(
             title=item.get("title", "Untitled"),
