@@ -158,15 +158,14 @@ PaperBanana 5에이전트 방법론으로 핵심 다이어그램 생성:
 ## Step 7: 📄 최종 출력
 
 1. 논문 + 다이어그램 + References를 합쳐 최종본 생성
-2. 선택한 언어로 출력
+2. 한국어로 출력
 3. BibTeX 파일 생성
 4. `docs/sessions/index.md`에 이번 세션 정보 추가 (없으면 새로 생성)
 
 **출력:**
 ```
 docs/sessions/{주제}_{날짜}/output/
-├── thesis.md           ← 최종 논문
-├── thesis-ko.md        ← 한국어 번역 (이중어 선택 시)
+├── thesis.md           ← 최종 논문 (한국어)
 ├── references.bib      ← BibTeX
 ├── figures/             ← 다이어그램 파일
 └── qa-report.md        ← QA 결과
