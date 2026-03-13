@@ -31,7 +31,10 @@ class OpenAlexSource:
         if year:
             params["filter"] = f"publication_year:{year}"
 
-        data = await self._fetch(params)
+        try:
+            data = await self._fetch(params)
+        except (httpx.HTTPStatusError, httpx.ConnectError, httpx.ReadTimeout):
+            return []
         results: list[dict[str, Any]] = data.get("results", [])
         return [self._to_paper(w) for w in results[:limit]]
 

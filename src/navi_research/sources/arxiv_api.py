@@ -26,7 +26,10 @@ class ArxivSource:
             "max_results": min(limit, 50),
             "sortBy": "relevance",
         }
-        xml_text = await self._fetch_xml(params)
+        try:
+            xml_text = await self._fetch_xml(params)
+        except (httpx.HTTPStatusError, httpx.ConnectError, httpx.ReadTimeout):
+            return []
         return self._parse(xml_text, limit)
 
     def _parse(self, xml_text: str, limit: int) -> list[Paper]:

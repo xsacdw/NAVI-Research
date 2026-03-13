@@ -31,7 +31,10 @@ class SemanticScholarSource:
         if year:
             params["year"] = year
 
-        data = await self._fetch(params)
+        try:
+            data = await self._fetch(params)
+        except (httpx.HTTPStatusError, httpx.ConnectError, httpx.ReadTimeout):
+            return []
         items: list[dict[str, Any]] = data.get("data", [])
         return [self._to_paper(p) for p in items[:limit]]
 
