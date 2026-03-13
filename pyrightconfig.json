@@ -1,0 +1,9 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.12",
+  "executionEnvironments": [
+    {"root": "src"},
+    {"root": "tests", "extraPaths": ["src"]}
+  ]
+}
