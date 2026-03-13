@@ -19,6 +19,8 @@ export default async function ReadPage({ params }: PageProps) {
     copyFiguresToPublic(session.folder, session.id);
     // Rewrite image paths
     content = rewriteImagePaths(content, session.id);
+    // Remove Abstract/초록 heading from body
+    content = content.replace(/^##\s+(Abstract|초록)\s*$/gm, "");
     // Extract TOC
     toc = extractToc(content);
   }
