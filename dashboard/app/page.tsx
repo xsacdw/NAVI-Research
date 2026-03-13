@@ -1,29 +1,24 @@
+"use client";
+
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Header } from "@/components/header";
+import { useLocale } from "@/components/locale-provider";
 import { sessions } from "@/lib/data";
 
 export default function Home() {
+  const { t } = useLocale();
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-3xl items-center px-4">
-          <span className="mr-2 text-xl">🧭</span>
-          <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-lg font-bold text-transparent">
-            NAVI Research
-          </span>
-        </div>
-      </header>
+      <Header />
 
-      {/* Main */}
       <main className="mx-auto max-w-3xl space-y-4 px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight">연구 세션</h1>
-          <p className="text-sm text-muted-foreground">
-            시뮬레이션으로 생성된 논문을 열람합니다
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t.pageTitle}</h1>
+          <p className="text-sm text-muted-foreground">{t.pageDesc}</p>
         </div>
 
         {sessions.map((s) => (
@@ -44,11 +39,11 @@ export default function Home() {
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span>📅 {s.date}</span>
                   <Separator orientation="vertical" className="h-3" />
-                  <span>{s.words.toLocaleString()} words</span>
+                  <span>{s.words.toLocaleString()} {t.words}</span>
                   <Separator orientation="vertical" className="h-3" />
-                  <span>📚 {s.citations} citations</span>
+                  <span>📚 {s.citations} {t.citations}</span>
                   <Separator orientation="vertical" className="h-3" />
-                  <span>🖼️ {s.diagrams} fig</span>
+                  <span>🖼️ {s.diagrams} {t.figures}</span>
                 </div>
                 <div className="flex gap-2">
                   <Badge
