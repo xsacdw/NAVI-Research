@@ -1,6 +1,3 @@
-import fs from "fs";
-import path from "path";
-
 export interface Session {
   id: string;
   title: string;
@@ -19,18 +16,9 @@ export interface Session {
   figures?: { src: string; caption: string; afterSection?: number }[];
 }
 
-// Build time: read from public/sessions.json
-function loadSessions(): Session[] {
-  const filePath = path.join(process.cwd(), "public", "sessions.json");
-  const raw = fs.readFileSync(filePath, "utf-8");
-  return JSON.parse(raw) as Session[];
-}
-
-export const sessions: Session[] = loadSessions();
-
-// Full session data with content (for article pages)
-export const sessionDetails: Record<string, Session> = {
-  "future-tech-society": {
+// Session list (used by both list & detail pages)
+export const sessions: Session[] = [
+  {
     id: "future-tech-society",
     title: "미래 기술 혁신이 사회 구조에 미치는 영향",
     subtitle: "AI, 6G, 바이오 기술을 중심으로",
@@ -41,6 +29,29 @@ export const sessionDetails: Record<string, Session> = {
     citations: 8,
     ptcs: 78,
     diagrams: 1,
+    abstract:
+      "본 연구는 인공지능(AI), 6G 통신, 바이오 기술 등 미래 핵심 기술이 사회 구조에 미치는 영향을 다층적으로 분석한다.",
+  },
+  {
+    id: "llm-agents-survey",
+    title: "A Survey on LLM-based Autonomous Agents",
+    subtitle: "Architecture, Collaboration, and Applications",
+    date: "2026-03-13",
+    type: "Literature Review",
+    lang: "영어",
+    words: 4600,
+    citations: 15,
+    ptcs: 72,
+    diagrams: 2,
+    abstract:
+      "This survey reviews the architecture and collaboration patterns of LLM-based autonomous agents.",
+  },
+];
+
+// Full session data with content (for article pages)
+export const sessionDetails: Record<string, Session> = {
+  "future-tech-society": {
+    ...sessions[0],
     abstract:
       "본 연구는 인공지능(AI), 6G 통신, 바이오 기술 등 미래 핵심 기술이 사회 구조에 미치는 영향을 다층적으로 분석한다. 최근 5년간 발표된 주요 문헌을 체계적으로 검토하여, 기술 발전이 의료·노동시장·교육·거버넌스·환경 분야에 가져올 변화를 정리하고, 정책적 대응 방향을 제시한다.",
     sections: [
@@ -71,7 +82,12 @@ export const sessionDetails: Record<string, Session> = {
       },
     ],
     figures: [
-      { src: "/figures/future-tech-society_fig1.png", caption: "Figure 1. 기술-사회 역학 프레임워크: 기술 동인, 사회 영향, 정책 대응의 3축 구조", afterSection: 3 },
+      {
+        src: "/figures/future-tech-society_fig1.png",
+        caption:
+          "Figure 1. 기술-사회 역학 프레임워크: 기술 동인, 사회 영향, 정책 대응의 3축 구조",
+        afterSection: 3,
+      },
     ],
     references: [
       "Burton, M.J., et al. (2021). The Lancet Global Health Commission on Global Eye Health. The Lancet Global Health, 9(4).",
@@ -83,16 +99,7 @@ export const sessionDetails: Record<string, Session> = {
     ],
   },
   "llm-agents-survey": {
-    id: "llm-agents-survey",
-    title: "A Survey on LLM-based Autonomous Agents",
-    subtitle: "Architecture, Collaboration, and Applications",
-    date: "2026-03-13",
-    type: "Literature Review",
-    lang: "영어",
-    words: 4600,
-    citations: 15,
-    ptcs: 72,
-    diagrams: 2,
+    ...sessions[1],
     abstract:
       "This survey reviews the architecture and collaboration patterns of LLM-based autonomous agents, covering profiling, memory, planning, and action modules.",
     sections: [
@@ -108,8 +115,17 @@ export const sessionDetails: Record<string, Session> = {
       },
     ],
     figures: [
-      { src: "/figures/llm-agents_fig1.png", caption: "Figure 1. LLM-based Agent Architecture: Profiling, Memory, Planning, and Action modules", afterSection: 1 },
-      { src: "/figures/llm-agents_fig2.png", caption: "Figure 2. Multi-Agent Collaboration Patterns", afterSection: 1 },
+      {
+        src: "/figures/llm-agents_fig1.png",
+        caption:
+          "Figure 1. LLM-based Agent Architecture: Profiling, Memory, Planning, and Action modules",
+        afterSection: 1,
+      },
+      {
+        src: "/figures/llm-agents_fig2.png",
+        caption: "Figure 2. Multi-Agent Collaboration Patterns",
+        afterSection: 1,
+      },
     ],
     references: [
       "Wang, L., et al. (2023). A Survey on LLM-based Autonomous Agents. arXiv:2308.11432.",
