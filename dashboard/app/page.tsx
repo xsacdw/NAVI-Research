@@ -113,7 +113,7 @@ export default function Home() {
 
   return (
     <div className={`min-h-screen transition-colors ${getViewModeClasses(readSettings.viewMode)}`}>
-      <Header showSettings settings={readSettings} onSettingsChange={setReadSettings} />
+      <Header />
 
       <div className="flex">
         {/* Left Sidebar */}
