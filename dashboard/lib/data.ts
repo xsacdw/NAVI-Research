@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+
 export interface Session {
   id: string;
   title: string;
@@ -10,12 +13,23 @@ export interface Session {
   ptcs: number;
   diagrams: number;
   abstract: string;
-  sections: { heading: string; content: string }[];
-  references: string[];
+  path?: string;
+  sections?: { heading: string; content: string }[];
+  references?: string[];
 }
 
-export const sessions: Session[] = [
-  {
+// Build time: read from public/sessions.json
+function loadSessions(): Session[] {
+  const filePath = path.join(process.cwd(), "public", "sessions.json");
+  const raw = fs.readFileSync(filePath, "utf-8");
+  return JSON.parse(raw) as Session[];
+}
+
+export const sessions: Session[] = loadSessions();
+
+// Full session data with content (for article pages)
+export const sessionDetails: Record<string, Session> = {
+  "future-tech-society": {
     id: "future-tech-society",
     title: "미래 기술 혁신이 사회 구조에 미치는 영향",
     subtitle: "AI, 6G, 바이오 기술을 중심으로",
@@ -37,7 +51,7 @@ export const sessions: Session[] = [
       {
         heading: "2. 기술 동인 분석",
         content:
-          "AI 기술의 발전은 크게 세 가지 축으로 진행되고 있다. 첫째, **대규모 언어 모델(LLM)**의 등장으로 자연어 처리, 코드 생성, 과학적 추론 등의 영역에서 인간 수준의 성능이 달성되고 있다. 둘째, **자율 에이전트** 기술은 AI가 단순 응답을 넘어 환경을 인식하고 목표를 달성하기 위해 자율적으로 행동하는 단계로 진화하고 있다.\n\n6G 통신 기술은 테라헤르츠(THz) 대역을 활용하여 1Tbps 이상의 전송 속도를 구현하고, 0.1ms 이하의 초저지연을 달성할 것으로 전망된다 (You et al., 2023).\n\n유전체 편집(CRISPR), mRNA 백신 플랫폼, AI 기반 신약 개발 등의 바이오 기술은 정밀 의학의 시대를 열고 있다.",
+          "AI 기술의 발전은 크게 세 가지 축으로 진행되고 있다. 첫째, 대규모 언어 모델(LLM)의 등장으로 자연어 처리, 코드 생성, 과학적 추론 등의 영역에서 인간 수준의 성능이 달성되고 있다. 둘째, 자율 에이전트 기술은 AI가 단순 응답을 넘어 환경을 인식하고 목표를 달성하기 위해 자율적으로 행동하는 단계로 진화하고 있다.\n\n6G 통신 기술은 테라헤르츠(THz) 대역을 활용하여 1Tbps 이상의 전송 속도를 구현하고, 0.1ms 이하의 초저지연을 달성할 것으로 전망된다 (You et al., 2023).\n\n유전체 편집(CRISPR), mRNA 백신 플랫폼, AI 기반 신약 개발 등의 바이오 기술은 정밀 의학의 시대를 열고 있다.",
       },
       {
         heading: "3. 사회적 영향 분석",
@@ -64,7 +78,7 @@ export const sessions: Session[] = [
       "Yurtsever, E., et al. (2020). A Survey of Autonomous Driving. IEEE Access, 8.",
     ],
   },
-  {
+  "llm-agents-survey": {
     id: "llm-agents-survey",
     title: "A Survey on LLM-based Autonomous Agents",
     subtitle: "Architecture, Collaboration, and Applications",
@@ -94,4 +108,4 @@ export const sessions: Session[] = [
       "Park, J.S., et al. (2023). Generative Agents. arXiv:2304.03442.",
     ],
   },
-];
+};
