@@ -1,0 +1,33 @@
+{
+  "results": [
+    {
+      "title": "Attention Is All You Need",
+      "authorships": [
+        {"author": {"display_name": "Ashish Vaswani"}},
+        {"author": {"display_name": "Noam Shazeer"}}
+      ],
+      "publication_year": 2017,
+      "doi": "https://doi.org/10.48550/arXiv.1706.03762",
+      "primary_location": {
+        "landing_page_url": "https://arxiv.org/abs/1706.03762",
+        "pdf_url": "https://arxiv.org/pdf/1706.03762"
+      },
+      "cited_by_count": 120000,
+      "abstract_inverted_index": null
+    },
+    {
+      "title": "BERT: Pre-training of Deep Bidirectional Transformers",
+      "authorships": [
+        {"author": {"display_name": "Jacob Devlin"}}
+      ],
+      "publication_year": 2019,
+      "doi": "https://doi.org/10.18653/v1/N19-1423",
+      "primary_location": {
+        "landing_page_url": "https://arxiv.org/abs/1810.04805",
+        "pdf_url": null
+      },
+      "cited_by_count": 50000,
+      "abstract_inverted_index": null
+    }
+  ]
+}
