@@ -1,0 +1,30 @@
+[
+  {
+    "id": "future-tech-society",
+    "title": "미래 기술 혁신이 사회 구조에 미치는 영향",
+    "subtitle": "AI, 6G, 바이오 기술을 중심으로",
+    "date": "2026-03-13",
+    "type": "Research Paper",
+    "lang": "한국어",
+    "words": 1294,
+    "citations": 8,
+    "ptcs": 78,
+    "diagrams": 1,
+    "abstract": "본 연구는 인공지능(AI), 6G 통신, 바이오 기술 등 미래 핵심 기술이 사회 구조에 미치는 영향을 다층적으로 분석한다.",
+    "path": "docs/sessions/future-tech-society_2026-03-13/output/thesis.md"
+  },
+  {
+    "id": "llm-agents-survey",
+    "title": "A Survey on LLM-based Autonomous Agents",
+    "subtitle": "Architecture, Collaboration, and Applications",
+    "date": "2026-03-13",
+    "type": "Literature Review",
+    "lang": "영어",
+    "words": 4600,
+    "citations": 15,
+    "ptcs": 72,
+    "diagrams": 2,
+    "abstract": "This survey reviews the architecture and collaboration patterns of LLM-based autonomous agents.",
+    "path": "docs/sessions/llm-agents-survey/output/thesis.md"
+  }
+]
