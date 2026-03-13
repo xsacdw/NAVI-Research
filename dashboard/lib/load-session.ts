@@ -5,8 +5,17 @@ const SESSIONS_DIR = path.join(process.cwd(), "..", "docs", "sessions");
 
 /**
  * Load thesis markdown content from docs/sessions/{folder}/output/thesis.md
+ * If locale is "en", try thesis_en.md first, fallback to thesis.md
  */
-export function loadThesisContent(sessionFolder: string): string | null {
+export function loadThesisContent(sessionFolder: string, locale?: string): string | null {
+  if (locale === "en") {
+    const enPath = path.join(SESSIONS_DIR, sessionFolder, "output", "thesis_en.md");
+    try {
+      return fs.readFileSync(enPath, "utf-8");
+    } catch {
+      // fallback to Korean
+    }
+  }
   const thesisPath = path.join(SESSIONS_DIR, sessionFolder, "output", "thesis.md");
   try {
     return fs.readFileSync(thesisPath, "utf-8");

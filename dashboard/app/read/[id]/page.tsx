@@ -17,26 +17,37 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+function processContent(raw: string | null, session: { folder: string; id: string }) {
+  if (!raw) return { content: null, toc: [] as { id: string; text: string; level: number }[] };
+  let content = rewriteImagePaths(raw, session.id);
+  content = content.replace(/^##\s+(Abstract|초록)\s*$/gm, "");
+  const toc = extractToc(content);
+  return { content, toc };
+}
+
 export default async function ReadPage({ params }: PageProps) {
   const { id } = await params;
   const session = sessions.find((s) => s.id === id);
 
-  // Load thesis markdown
-  let content = session?.folder ? loadThesisContent(session.folder) : null;
-  let toc: { id: string; text: string; level: number }[] = [];
+  // Copy figures
+  if (session) copyFiguresToPublic(session.folder, session.id);
 
-  if (content && session) {
-    // Copy figures to public
-    copyFiguresToPublic(session.folder, session.id);
-    // Rewrite image paths
-    content = rewriteImagePaths(content, session.id);
-    // Remove Abstract/초록 heading from body
-    content = content.replace(/^##\s+(Abstract|초록)\s*$/gm, "");
-    // Extract TOC
-    toc = extractToc(content);
-  }
+  // Load both Korean and English content at build time
+  const koRaw = session?.folder ? loadThesisContent(session.folder, "ko") : null;
+  const enRaw = session?.folder ? loadThesisContent(session.folder, "en") : null;
 
-  return <ReadClient id={id} content={content} toc={toc} />;
+  const ko = processContent(koRaw, session || { folder: "", id });
+  const en = processContent(enRaw, session || { folder: "", id });
+
+  return (
+    <ReadClient
+      id={id}
+      content={ko.content}
+      contentEn={en.content}
+      toc={ko.toc}
+      tocEn={en.toc}
+    />
+  );
 }
 
 export function generateStaticParams() {

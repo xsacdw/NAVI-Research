@@ -31,7 +31,9 @@ interface TocItem {
 interface ReadClientProps {
   id: string;
   content: string | null;
+  contentEn?: string | null;
   toc: TocItem[];
+  tocEn?: TocItem[];
 }
 
 /** Split markdown into chapters by ## headings */
@@ -59,18 +61,22 @@ function splitChapters(md: string): { title: string; body: string }[] {
   return chapters;
 }
 
-export function ReadClient({ id, content, toc }: ReadClientProps) {
+export function ReadClient({ id, content, contentEn, toc, tocEn }: ReadClientProps) {
   const { locale, t } = useLocale();
   const session = sessions.find((s) => s.id === id);
   if (!session) notFound();
+
+  // Choose content based on locale
+  const activeContent = (locale === "en" && contentEn) ? contentEn : content;
+  const activeToc = (locale === "en" && tocEn && tocEn.length > 0) ? tocEn : toc;
 
   const loc = session[locale];
 
   // --- Chapters ---
   const chapters = useMemo(() => {
-    if (!content) return [];
-    return splitChapters(content);
-  }, [content]);
+    if (!activeContent) return [];
+    return splitChapters(activeContent);
+  }, [activeContent]);
 
   const [chapterIdx, setChapterIdx] = useState(0);
   const currentChapter = chapters[chapterIdx] || null;
@@ -119,7 +125,7 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
   const groupedToc = useMemo(() => {
     const groups: { parent: TocItem; children: TocItem[]; chapterIdx: number }[] = [];
     let h2Index = -1;
-    toc.forEach((item) => {
+    activeToc.forEach((item) => {
       if (item.level === 2) {
         h2Index++;
         groups.push({ parent: item, children: [], chapterIdx: h2Index + 1 });
@@ -128,7 +134,7 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
       }
     });
     return groups;
-  }, [toc]);
+  }, [activeToc]);
 
   // Markdown components
   const mdComponents = useMemo(() => ({
@@ -302,7 +308,7 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
           </article>
 
           {/* Right TOC sidebar */}
-          {toc.length > 0 && tocOpen && (
+          {activeToc.length > 0 && tocOpen && (
             <aside className="hidden lg:block w-72 shrink-0">
               <nav className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
                 {groupedToc.map((group) => (
