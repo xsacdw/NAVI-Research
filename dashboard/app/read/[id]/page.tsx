@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { sessions } from "@/lib/data";
+import { sessions, sessionDetails } from "@/lib/data";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -10,7 +10,7 @@ interface PageProps {
 
 export default async function ReadPage({ params }: PageProps) {
   const { id } = await params;
-  const session = sessions.find((s) => s.id === id);
+  const session = sessionDetails[id] || sessions.find((s) => s.id === id);
   if (!session) notFound();
 
   return (
