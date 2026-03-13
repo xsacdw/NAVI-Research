@@ -1,9 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { translations, Locale } from "@/lib/i18n";
-
-type TranslationStrings = typeof translations.ko;
+import { translations, Locale, TranslationStrings } from "@/lib/i18n";
 
 interface LocaleContextType {
   locale: Locale;
@@ -32,7 +30,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggle = () => {
-    const next = locale === "ko" ? "en" : "ko";
+    const next: Locale = locale === "ko" ? "en" : "ko";
     setLocale(next);
     localStorage.setItem("navi-locale", next);
   };

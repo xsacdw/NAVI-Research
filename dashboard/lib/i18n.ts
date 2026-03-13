@@ -1,4 +1,17 @@
-export const translations = {
+export interface TranslationStrings {
+  siteTitle: string;
+  pageTitle: string;
+  pageDesc: string;
+  backToList: string;
+  backToListFull: string;
+  references: string;
+  words: string;
+  citations: string;
+  figures: string;
+  langLabel: string;
+}
+
+export const translations: Record<string, TranslationStrings> = {
   ko: {
     siteTitle: "NAVI Research",
     pageTitle: "연구 세션",
@@ -23,6 +36,6 @@ export const translations = {
     figures: "fig",
     langLabel: "한",
   },
-} as const;
+};
 
-export type Locale = keyof typeof translations;
+export type Locale = "ko" | "en";
