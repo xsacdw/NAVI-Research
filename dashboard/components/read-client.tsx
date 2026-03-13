@@ -10,6 +10,16 @@ import { Separator } from "@/components/ui/separator";
 import { useLocale } from "@/components/locale-provider";
 import { translateType } from "@/lib/i18n";
 import { sessions } from "@/lib/data";
+import {
+  ReadSettings,
+  loadSettings,
+  saveSettings,
+  getFontSize,
+  getLineHeight,
+  getViewModeClasses,
+  DEFAULT_SETTINGS,
+  type ReadingSettings,
+} from "@/components/read-settings";
 
 interface TocItem {
   id: string;
@@ -79,6 +89,14 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
   // --- TOC sidebar toggle ---
   const [tocOpen, setTocOpen] = useState(false);
 
+  // --- Reading settings ---
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [readSettings, setReadSettings] = useState<ReadingSettings>(DEFAULT_SETTINGS);
+
+  useEffect(() => {
+    setReadSettings(loadSettings());
+  }, []);
+
   const scrollToSection = useCallback((sectionId: string) => {
     const el = document.getElementById(sectionId);
     if (el) {
@@ -121,7 +139,7 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
   })();
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] dark:bg-background">
+    <div className={`min-h-screen transition-colors ${getViewModeClasses(readSettings.viewMode)}`}>
       {/* Top bar */}
       <header className="sticky top-0 z-50 border-b bg-white/90 dark:bg-background/90 backdrop-blur-md">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-4 h-14">
@@ -146,8 +164,33 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Settings button */}
+            <div className="relative">
+              <button
+                onClick={() => { setSettingsOpen(!settingsOpen); setTocOpen(false); }}
+                className={`p-2 rounded-lg transition-colors ${
+                  settingsOpen
+                    ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
+                aria-label="설정"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+              </button>
+              <ReadSettings
+                open={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                settings={readSettings}
+                onChange={setReadSettings}
+              />
+            </div>
+
+            {/* TOC button */}
             <button
-              onClick={() => setTocOpen(!tocOpen)}
+              onClick={() => { setTocOpen(!tocOpen); setSettingsOpen(false); }}
               className={`p-2 rounded-lg transition-colors ${
                 tocOpen
                   ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
@@ -174,7 +217,14 @@ export function ReadClient({ id, content, toc }: ReadClientProps) {
       <div className="mx-auto max-w-6xl px-4 py-10">
         <div className="flex gap-8">
           {/* --- Main content --- */}
-          <article ref={articleRef} className="min-w-0 flex-1 max-w-3xl mx-auto">
+          <article
+            ref={articleRef}
+            className="min-w-0 flex-1 max-w-3xl mx-auto"
+            style={{
+              fontSize: getFontSize(readSettings.fontSize),
+              lineHeight: getLineHeight(readSettings.lineHeight),
+            }}
+          >
             {/* Meta header */}
             <header className="mb-8 text-center">
               <h1 className="mb-2 text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-foreground">
