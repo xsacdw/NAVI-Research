@@ -1,5 +1,9 @@
 # 🧭 NAVI-PJ — AI 기반 학술 논문 연구 플랫폼
 
+<p align="center">
+  <img src="dashboard/public/og-image.png" alt="NAVI-PJ OG Image" width="800">
+</p>
+
 > 주제 하나만 입력하면, 문헌 검색 → 분석 → 집필 → 다이어그램 생성 → 7중 품질 검증 → 대시보드 배포까지 자동으로 처리합니다.
 
 [![Python](https://img.shields.io/badge/Python-3.12+-blue?logo=python)](https://python.org)
