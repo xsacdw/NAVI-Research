@@ -3,7 +3,7 @@
 > 주제 하나만 입력하면, 문헌 검색 → 분석 → 집필 → 다이어그램 생성 → 7중 품질 검증 → 대시보드 배포까지 자동으로 처리합니다.
 
 [![Python](https://img.shields.io/badge/Python-3.12+-blue?logo=python)](https://python.org)
-[![Next.js](https://img.shields.io/badge/Next.js-Dashboard-black?logo=next.js)](https://navi-pj.pages.dev)
+[![Next.js](https://img.shields.io/badge/Next.js-Dashboard-black?logo=next.js)](https://navi-research.pages.dev)
 
 ---
 
@@ -231,7 +231,7 @@ docs/sessions/
 
 논문 완성 후 자동으로 **Next.js 대시보드**에 등록되어 웹에서 열람할 수 있습니다.
 
-- **배포 URL:** [navi-pj.pages.dev](https://navi-pj.pages.dev)
+- **배포 URL:** [navi-research.pages.dev](https://navi-research.pages.dev)
 - **호스팅:** Cloudflare Pages (git push 시 자동 빌드)
 - **기능:** 세션 목록, 논문 본문 열람, QA 점수 확인
 
