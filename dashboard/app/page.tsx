@@ -38,6 +38,12 @@ export default function Home() {
   const [newGroupName, setNewGroupName] = useState("");
   const [showMoveDialog, setShowMoveDialog] = useState(false);
 
+  // Drag & Drop state (admin only)
+  const [draggedSessionId, setDraggedSessionId] = useState<string | null>(null);
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [sessionOrder, setSessionOrder] = useState<string[]>([]);
+
   // KV save status
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -62,6 +68,10 @@ export default function Home() {
               group: data.assignments[s.id] || s.group || "default"
             })));
           }
+          // Load session order
+          if (data.sessionOrder) {
+            setSessionOrder(data.sessionOrder);
+          }
         }
       })
       .catch(() => {
@@ -70,7 +80,7 @@ export default function Home() {
   }, []);
 
   // --- Save folder structure to KV (auto-save for admin) ---
-  const saveToKV = useCallback(async (grps: SessionGroup[], sessions: Session[]) => {
+  const saveToKV = useCallback(async (grps: SessionGroup[], sessions: Session[], order?: string[]) => {
     if (!isAdmin) return;
     const assignments: Record<string, string> = {};
     sessions.forEach(s => { assignments[s.id] = s.group || "default"; });
@@ -81,7 +91,7 @@ export default function Home() {
           "Content-Type": "application/json",
           "Authorization": "Bearer quasar5-admin",
         },
-        body: JSON.stringify({ groups: grps, assignments }),
+        body: JSON.stringify({ groups: grps, assignments, sessionOrder: order || sessionOrder }),
       });
       if (res.ok) {
         setSaveStatus("saved");
@@ -92,7 +102,7 @@ export default function Home() {
     } catch {
       // Network error (local dev) → silently ignore
     }
-  }, [isAdmin]);
+  }, [isAdmin, sessionOrder]);
 
   // --- Group CRUD ---
   const createGroup = () => {
@@ -151,13 +161,78 @@ export default function Home() {
   };
 
 
-  // --- Filter ---
+  // --- Drag & Drop handlers (admin only) ---
+  const handleDragStart = (e: React.DragEvent, sessionId: string) => {
+    e.dataTransfer.setData("text/plain", sessionId);
+    e.dataTransfer.effectAllowed = "move";
+    setDraggedSessionId(sessionId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedSessionId(null);
+    setDragOverFolderId(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDropOnFolder = (e: React.DragEvent, folderId: string) => {
+    e.preventDefault();
+    const sessionId = e.dataTransfer.getData("text/plain");
+    if (!sessionId) return;
+    const newSessions = sessionList.map(s => s.id === sessionId ? { ...s, group: folderId } : s);
+    setSessionList(newSessions);
+    setDragOverFolderId(null);
+    setDraggedSessionId(null);
+    saveToKV(groups, newSessions);
+  };
+
+  const handleReorder = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    const sessionId = e.dataTransfer.getData("text/plain");
+    if (!sessionId) return;
+    const current = sortedVisible;
+    const fromIndex = current.findIndex(s => s.id === sessionId);
+    if (fromIndex === -1 || fromIndex === targetIndex) { setDragOverIndex(null); return; }
+    // Build new order from all sessions
+    const currentOrder = sessionOrder.length > 0 ? [...sessionOrder] : sessionList.map(s => s.id);
+    const globalFromIndex = currentOrder.indexOf(sessionId);
+    if (globalFromIndex !== -1) currentOrder.splice(globalFromIndex, 1);
+    // Find global insert position
+    const effectiveTarget = targetIndex > fromIndex ? targetIndex - 1 : targetIndex;
+    const targetSession = current[effectiveTarget];
+    if (targetSession) {
+      const globalTargetIndex = currentOrder.indexOf(targetSession.id);
+      if (targetIndex > fromIndex) {
+        currentOrder.splice(globalTargetIndex + 1, 0, sessionId);
+      } else {
+        currentOrder.splice(globalTargetIndex, 0, sessionId);
+      }
+    } else {
+      currentOrder.push(sessionId);
+    }
+    setSessionOrder(currentOrder);
+    setDragOverIndex(null);
+    setDraggedSessionId(null);
+    saveToKV(groups, sessionList, currentOrder);
+  };
+
+  // --- Filter & Sort ---
   const getVisibleSessions = () => {
     if (activeGroupId === "all") return sessionList;
     return sessionList.filter(s => (s.group || "default") === activeGroupId);
   };
 
-  const visibleSessions = getVisibleSessions();
+  const sortByOrder = (list: Session[]) => {
+    if (sessionOrder.length === 0) return list;
+    const orderMap = new Map(sessionOrder.map((id, i) => [id, i]));
+    return [...list].sort((a, b) => {
+      const oa = orderMap.get(a.id) ?? Infinity;
+      const ob = orderMap.get(b.id) ?? Infinity;
+      return oa - ob;
+    });
+  };
+
+  const sortedVisible = sortByOrder(getVisibleSessions());
+  const visibleSessions = sortedVisible;
 
   return (
     <div className={`min-h-screen transition-colors ${getViewModeClasses(readSettings.viewMode)}`}>
@@ -183,6 +258,7 @@ export default function Home() {
             {groups.map((group) => {
               const count = sessionList.filter(s => (s.group || "default") === group.id).length;
               const isEditing = editingGroupId === group.id;
+              const isDragOver = dragOverFolderId === group.id;
               return (
                 <div key={group.id} className="group/folder relative">
                   {isEditing ? (
@@ -201,9 +277,12 @@ export default function Home() {
                   ) : (
                     <button
                       onClick={() => setActiveGroupId(group.id)}
-                      className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm transition-colors ${
+                      onDragOver={isAdmin ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverFolderId(group.id); } : undefined}
+                      onDragLeave={isAdmin ? () => setDragOverFolderId(null) : undefined}
+                      onDrop={isAdmin ? (e) => handleDropOnFolder(e, group.id) : undefined}
+                      className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm transition-all ${
                         activeGroupId === group.id ? "bg-indigo-500/10 text-indigo-400 font-medium" : "text-muted-foreground hover:bg-accent"
-                      }`}
+                      } ${isDragOver ? "ring-2 ring-indigo-500 bg-indigo-500/15 scale-[1.02]" : ""}`}
                     >
                       📁 {group.name}
                       <span className="ml-auto text-xs opacity-50">{count}</span>
@@ -329,56 +408,101 @@ export default function Home() {
           </div>
 
           {/* Session cards */}
-          <div className="space-y-3">
-            {visibleSessions.map((s) => {
+          <div className="space-y-0">
+            {visibleSessions.map((s, index) => {
               const loc = s[locale];
               const isSelected = selectedIds.has(s.id);
+              const isDragging = draggedSessionId === s.id;
               return (
-                <div key={s.id} className={`relative flex items-start gap-2 ${isSelected ? "ring-1 ring-indigo-500/30 rounded-lg" : ""}`}>
+                <div key={s.id}>
+                  {/* Drop indicator (above card) */}
                   {isAdmin && (
-                    <button
-                      onClick={() => toggleSelect(s.id)}
-                      className={`mt-5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-[10px] transition-colors ${
-                        isSelected ? "bg-indigo-600 border-indigo-600 text-white" : "border-muted-foreground/30 hover:border-indigo-500"
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverIndex(index); }}
+                      onDragLeave={() => { if (dragOverIndex === index) setDragOverIndex(null); }}
+                      onDrop={(e) => handleReorder(e, index)}
+                      className={`transition-all duration-200 ${
+                        dragOverIndex === index && draggedSessionId
+                          ? "h-12 my-1 rounded-lg border-2 border-dashed border-indigo-500/50 bg-indigo-500/10 flex items-center justify-center"
+                          : "h-3"
                       }`}
                     >
-                      {isSelected ? "✓" : ""}
-                    </button>
+                      {dragOverIndex === index && draggedSessionId && (
+                        <span className="text-xs text-indigo-400">여기에 놓기</span>
+                      )}
+                    </div>
                   )}
-                  <Link href={`${isAdmin ? "/admin" : ""}/read/${s.id}`} className="block flex-1 min-w-0">
-                    <Card className="group cursor-pointer transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5">
-                      <CardHeader className="pb-2 sm:pb-3 px-4 sm:px-6">
-                        <CardTitle className="text-base sm:text-lg leading-snug group-hover:text-indigo-400 transition-colors">
-                          {loc.title}
-                        </CardTitle>
-                        {loc.subtitle && <p className="text-xs sm:text-sm text-muted-foreground">{loc.subtitle}</p>}
-                      </CardHeader>
-                      <CardContent className="space-y-2 sm:space-y-3 px-4 sm:px-6">
-                        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{loc.abstract}</p>
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-muted-foreground">
-                          <span>📅 {s.date}</span>
-                          <Separator orientation="vertical" className="h-3 hidden sm:block" />
-                          <span>{s.words.toLocaleString()} {t.words}</span>
-                          <Separator orientation="vertical" className="h-3 hidden sm:block" />
-                          <span>📚 {s.citations} {t.citations}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                          <Badge className={s.ptcs >= 80 ? "bg-green-500/15 text-green-400" : "bg-amber-500/15 text-amber-400"}>
-                            {t.ptcs} {s.ptcs}%
-                          </Badge>
-                          <Badge variant="secondary">{translateType(s.type, t)}</Badge>
-                          {isAdmin && (
-                            <span className="ml-auto text-[10px] font-mono opacity-30 hidden sm:inline">
-                              {groups.find(g => g.id === (s.group || "default"))?.name || "기본"}
-                            </span>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                  {!isAdmin && <div className="h-3" />}
+                  <div
+                    draggable={isAdmin}
+                    onDragStart={isAdmin ? (e) => handleDragStart(e, s.id) : undefined}
+                    onDragEnd={isAdmin ? handleDragEnd : undefined}
+                    className={`relative flex items-start gap-2 transition-all ${
+                      isSelected ? "ring-1 ring-indigo-500/30 rounded-lg" : ""
+                    } ${isDragging ? "opacity-40 scale-[0.98]" : ""} ${isAdmin ? "cursor-grab active:cursor-grabbing" : ""}`}
+                  >
+                    {isAdmin && (
+                      <button
+                        onClick={() => toggleSelect(s.id)}
+                        className={`mt-5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-[10px] transition-colors ${
+                          isSelected ? "bg-indigo-600 border-indigo-600 text-white" : "border-muted-foreground/30 hover:border-indigo-500"
+                        }`}
+                      >
+                        {isSelected ? "✓" : ""}
+                      </button>
+                    )}
+                    <Link href={`${isAdmin ? "/admin" : ""}/read/${s.id}`} className="block flex-1 min-w-0" draggable={false}>
+                      <Card className="group cursor-pointer transition-all hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5">
+                        <CardHeader className="pb-2 sm:pb-3 px-4 sm:px-6">
+                          <CardTitle className="text-base sm:text-lg leading-snug group-hover:text-indigo-400 transition-colors">
+                            {loc.title}
+                          </CardTitle>
+                          {loc.subtitle && <p className="text-xs sm:text-sm text-muted-foreground">{loc.subtitle}</p>}
+                        </CardHeader>
+                        <CardContent className="space-y-2 sm:space-y-3 px-4 sm:px-6">
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{loc.abstract}</p>
+                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-muted-foreground">
+                            <span>📅 {s.date}</span>
+                            <Separator orientation="vertical" className="h-3 hidden sm:block" />
+                            <span>{s.words.toLocaleString()} {t.words}</span>
+                            <Separator orientation="vertical" className="h-3 hidden sm:block" />
+                            <span>📚 {s.citations} {t.citations}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <Badge className={s.ptcs >= 80 ? "bg-green-500/15 text-green-400" : "bg-amber-500/15 text-amber-400"}>
+                              {t.ptcs} {s.ptcs}%
+                            </Badge>
+                            <Badge variant="secondary">{translateType(s.type, t)}</Badge>
+                            {isAdmin && (
+                              <span className="ml-auto text-[10px] font-mono opacity-30 hidden sm:inline">
+                                {groups.find(g => g.id === (s.group || "default"))?.name || "기본"}
+                              </span>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </div>
                 </div>
               );
             })}
+            {/* Bottom drop zone */}
+            {isAdmin && visibleSessions.length > 0 && (
+              <div
+                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverIndex(visibleSessions.length); }}
+                onDragLeave={() => { if (dragOverIndex === visibleSessions.length) setDragOverIndex(null); }}
+                onDrop={(e) => handleReorder(e, visibleSessions.length)}
+                className={`transition-all duration-200 ${
+                  dragOverIndex === visibleSessions.length && draggedSessionId
+                    ? "h-12 my-1 rounded-lg border-2 border-dashed border-indigo-500/50 bg-indigo-500/10 flex items-center justify-center"
+                    : "h-3"
+                }`}
+              >
+                {dragOverIndex === visibleSessions.length && draggedSessionId && (
+                  <span className="text-xs text-indigo-400">여기에 놓기</span>
+                )}
+              </div>
+            )}
             {visibleSessions.length === 0 && (
               <p className="text-sm text-muted-foreground italic py-8 text-center">비어 있음</p>
             )}
