@@ -1,4 +1,4 @@
-# 🧭 NAVI-PJ — AI 기반 학술 논문 연구 플랫폼
+# 🧭 NAVI-Research — AI 기반 학술 논문 연구 플랫폼
 
 <p align="center">
   <img src="assets/og-image.png" alt="NAVI-Research OG Image" width="800">
